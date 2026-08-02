@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Amour · 3D 陪伴 AI 形象</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./libs/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- ===== 电影级模糊背景（景深底图 + 光晕 + 暗角 + 颗粒） ===== -->
+  <div id="bg-stage">
+    <div id="bg-warm" class="bg-layer" style="background-image:url('./assets/bg/apartment_warm.jpg')"></div>
+    <div id="bg-night" class="bg-layer" style="background-image:url('./assets/bg/city_night.jpg')"></div>
+    <div id="bg-glow"></div>
+    <div id="bg-vignette"></div>
+    <div id="bg-grain"></div>
+  </div>
+
+  <!-- ===== 3D 场景挂载点（透明画布，角色合成于模糊背景之上） ===== -->
+  <div id="stage-root"></div>
+
+  <!-- ===== 载入遮罩 ===== -->
+  <div id="loading" class="loading">
+    <div class="loading-ring"></div>
+    <p class="loading-text">Amour · 正在布置舞台…</p>
+  </div>
+
+  <!-- ===== 开局：角色创建 ===== -->
+  <section id="creation" class="overlay creation hidden">
+    <div class="creation-panel">
+      <header class="creation-head">
+        <h1 class="brand">Amour</h1>
+        <p class="subtitle">在暖光舞台上，塑造属于你的陪伴形象</p>
+      </header>
+
+      <div class="creation-body">
+        <div class="gender-choose">
+          <h2 class="step-title"><span class="step-no">1</span> 选择基础形象</h2>
+          <div class="gender-cards">
+            <button class="gender-card" data-gender="female">
+              <canvas class="portrait-preview" data-preview="female" width="220" height="300"></canvas>
+              <span class="gender-name">女生 · Yui</span>
+              <span class="gender-desc">温婉知性 · 栗棕长发</span>
+            </button>
+            <button class="gender-card" data-gender="male">
+              <canvas class="portrait-preview" data-preview="male" width="220" height="300"></canvas>
+              <span class="gender-name">男生 · Ren</span>
+              <span class="gender-desc">清隽沉静 · 利落短发</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="creation-fields">
+          <h2 class="step-title"><span class="step-no">2</span> 给 TA 起个名字</h2>
+          <input id="input-name" class="field-input" type="text" maxlength="12" placeholder="Yui" />
+
+          <h2 class="step-title"><span class="step-no">3</span> TA 该怎么称呼你</h2>
+          <input id="input-callname" class="field-input" type="text" maxlength="12" placeholder="主人" />
+
+          <button id="btn-start" class="btn-primary" disabled>进入舞台 →</button>
+          <p class="hint">先选择左侧的基础形象</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 主场景 HUD ===== -->
+  <div id="hud" class="hud hidden">
+    <!-- 顶部左：角色信息（头顶名字由 3D 层绘制，这里放状态） -->
+    <div class="hud-topleft">
+      <div class="mood-chip"><span id="mood-emoji">🎭</span><span id="mood-text">在舞台中央等你</span></div>
+    </div>
+
+    <!-- 顶部右：好感度 -->
+    <div class="hud-topright">
+      <div class="affinity">
+        <div class="affinity-head">
+          <span class="affinity-label">好感度</span>
+          <span id="affinity-num">0</span><span class="affinity-max">/100</span>
+        </div>
+        <div class="affinity-track"><div id="affinity-fill" class="affinity-fill"></div></div>
+        <div id="affinity-tip" class="affinity-tip">互动可提升好感</div>
+      </div>
+    </div>
+
+    <!-- 左侧工具条 -->
+    <div class="toolbar">
+      <button class="tool-btn" data-panel="appearance" title="外观定制">👗<span>外观</span></button>
+      <button class="tool-btn" data-panel="scene" title="场景定制">🏠<span>场景</span></button>
+      <button class="tool-btn" data-panel="props" title="道具摆放">🪴<span>道具</span></button>
+      <button class="tool-btn" id="btn-rhythm" title="节奏小游戏">🎵<span>合奏</span></button>
+      <button class="tool-btn" data-panel="settings" title="设置">⚙️<span>设置</span></button>
+    </div>
+
+    <!-- 底部对话栏 -->
+    <div class="dialogue-bar">
+      <button id="mic-btn" class="mic-btn" title="按住/点击说话">🎤</button>
+      <input id="chat-input" class="chat-input" type="text" placeholder="和 TA 说点什么…" maxlength="60" />
+      <button id="chat-send" class="chat-send">发送</button>
+    </div>
+  </div>
+
+  <!-- ===== 定制面板：外观 ===== -->
+  <aside id="panel-appearance" class="side-panel hidden">
+    <div class="panel-head"><h3>外观定制</h3><button class="panel-close" data-close="appearance">✕</button></div>
+    <div class="panel-scroll">
+      <div class="panel-group">
+        <h4>发型</h4>
+        <div id="hair-grid" class="thumb-grid"></div>
+      </div>
+      <div class="panel-group">
+        <h4>发色</h4>
+        <div class="color-row">
+          <input type="color" id="hair-color" class="color-pick" value="#6b4a2f" />
+          <div id="hair-swatches" class="swatches"></div>
+        </div>
+      </div>
+      <div class="panel-group">
+        <h4>服装</h4>
+        <div id="outfit-grid" class="thumb-grid"></div>
+        <div class="color-row">
+          <span class="mini-label">主色</span>
+          <input type="color" id="outfit-color" class="color-pick" value="#f3ece1" />
+        </div>
+      </div>
+      <div class="panel-group">
+        <h4>眼睛颜色</h4>
+        <div class="color-row">
+          <input type="color" id="eye-color" class="color-pick" value="#5a3a24" />
+          <div id="eye-swatches" class="swatches"></div>
+        </div>
+      </div>
+      <div class="panel-group">
+        <h4>配饰</h4>
+        <div id="accessory-grid" class="chip-grid"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== 定制面板：场景 ===== -->
+  <aside id="panel-scene" class="side-panel hidden">
+    <div class="panel-head"><h3>场景定制</h3><button class="panel-close" data-close="scene">✕</button></div>
+    <div class="panel-scroll">
+      <div class="panel-group">
+        <h4>场景主题</h4>
+        <div id="theme-grid" class="thumb-grid"></div>
+      </div>
+      <div class="panel-group">
+        <h4>光照氛围</h4>
+        <div class="light-modes">
+          <button class="light-btn" data-light="warm">暖光</button>
+          <button class="light-btn" data-light="cool">冷光</button>
+        </div>
+      </div>
+      <div class="panel-group">
+        <h4>昼夜 <span id="daynight-val" class="mini-label">正午</span></h4>
+        <input type="range" id="daynight" class="slider" min="0" max="100" value="50" />
+        <div class="slider-scale"><span>🌙 夜</span><span>🌅 晨昏</span><span>☀️ 昼</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== 定制面板：道具 ===== -->
+  <aside id="panel-props" class="side-panel hidden">
+    <div class="panel-head"><h3>道具摆放</h3><button class="panel-close" data-close="props">✕</button></div>
+    <div class="panel-scroll">
+      <p class="panel-note">点击添加道具到舞台，然后在场景中拖拽到任意位置。</p>
+      <div id="prop-grid" class="chip-grid"></div>
+      <button id="clear-props" class="btn-ghost">清空已放置道具</button>
+    </div>
+  </aside>
+
+  <!-- ===== 定制面板：设置（语音） ===== -->
+  <aside id="panel-settings" class="side-panel hidden">
+    <div class="panel-head"><h3>设置</h3><button class="panel-close" data-close="settings">✕</button></div>
+    <div class="panel-scroll">
+      <div class="panel-group">
+        <h4>语音交互</h4>
+        <p id="voice-support" class="panel-note"></p>
+        <label class="switch-row"><span>角色语音朗读</span><input type="checkbox" id="set-voiceout" class="switch" /></label>
+      </div>
+      <div class="panel-group">
+        <h4>音色</h4>
+        <div class="light-modes">
+          <button class="voice-btn" data-voice="female">女声</button>
+          <button class="voice-btn" data-voice="male">男声</button>
+        </div>
+      </div>
+      <div class="panel-group">
+        <h4>语速 <span id="rate-val" class="mini-label">1.0×</span></h4>
+        <input type="range" id="set-rate" class="slider" min="60" max="160" value="100" />
+        <div class="slider-scale"><span>慢</span><span>正常</span><span>快</span></div>
+      </div>
+      <div class="panel-group">
+        <h4>唤醒词</h4>
+        <input id="set-wakeword" class="field-input" type="text" maxlength="12" placeholder="角色名字" style="margin-bottom:10px" />
+        <label class="switch-row"><span>开启唤醒监听</span><input type="checkbox" id="set-wake" class="switch" /></label>
+        <p class="panel-note">开启后，喊出唤醒词即可自动开始语音输入。唤醒词后紧跟内容会直接作为对话。</p>
+      </div>
+      <div class="panel-group">
+        <button id="btn-reset" class="btn-ghost">重置存档（重新创建角色）</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== 气泡层 ===== -->
+  <div id="bubble-layer" class="bubble-layer"></div>
+
+  <!-- ===== 节奏小游戏 ===== -->
+  <div id="rhythm" class="overlay rhythm hidden">
+    <div class="rhythm-panel">
+      <div class="rhythm-head">
+        <h3>🎵 合奏时刻</h3>
+        <button class="panel-close" data-close="rhythm">✕</button>
+      </div>
+      <p class="rhythm-desc">TA 会哼一段旋律，节拍到达高亮圈时点击它得分！</p>
+      <div class="rhythm-stats">
+        <span>得分 <b id="rhythm-score">0</b></span>
+        <span>连击 <b id="rhythm-combo">0</b></span>
+        <span>评价 <b id="rhythm-grade">—</b></span>
+      </div>
+      <div id="rhythm-stage" class="rhythm-stage"></div>
+      <div class="rhythm-actions">
+        <button id="rhythm-start" class="btn-primary">开始合奏</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

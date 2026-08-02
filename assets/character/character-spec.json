@@ -1,0 +1,100 @@
+{
+  "project": "Amour 陪伴AI",
+  "character": "默认女性角色",
+  "purpose": "高清立绘套件，用于后续 Live2D 骨骼绑定",
+  "generated_at": "2026-08-02",
+  "generator": "AI 生图（image-generate），基于用户2张参考图提取特征生成，基准图锁定后逐张 image_edit 保持角色一致性",
+  "base_reference": "01_base_portrait.png",
+  "appearance_spec": {
+    "hairstyle": "侧分7:3中短Lob发，发尾向内扣微S卷，长刘海侧分垂落，发尾散落锁骨上方",
+    "hair_color": "深咖啡色 #2D2926，暖光高光 #A67C52，发根深发梢亮渐变",
+    "face": "鹅蛋脸，下巴圆润略尖，苹果肌饱满",
+    "eyes": "开扇形双眼皮，眼型狭长眼尾微上扬，暖棕瞳孔，主高光10点+副高光4点，上睫毛眼尾加长卷翘",
+    "lips": "M形唇，上唇薄唇峰明显，下唇丰满，唇色 #C58B85，湿润光泽",
+    "skin": "白皙黄调 #F5E1D2，蜜桃粉腮红位于苹果肌，鼻梁细窄高光，半哑光SSS质感",
+    "eyebrows": "流星眉灰棕 #4B3D33，中细，毛流感强",
+    "temperament": "温柔知性，带轻微忧郁反思感",
+    "render_style": "超写实CG渲染，接近真人偏数字艺术，瓷器光滑肌肤，发丝分明"
+  },
+  "common": {
+    "orientation": "正面朝向",
+    "background": "纯色浅灰底 #EDEDED（分层部位图为纯白底），便于抠图/绑骨",
+    "format": "PNG",
+    "resolution_tier": "2k"
+  },
+  "assets": [
+    {
+      "file": "01_base_portrait.png",
+      "category": "基础立绘",
+      "usage": "角色基准图（半身，米白棉麻背心，正面站姿双手叠于身前，表情平静温柔），后续所有变体的一致性基准",
+      "width": 1792, "height": 2400, "size_mb": 4.93, "aspect_ratio": "3:4"
+    },
+    {
+      "file": "02_expr_smile.png",
+      "category": "表情变体",
+      "usage": "微笑（嘴角上扬，眼睛弯成月牙）",
+      "width": 1792, "height": 2400, "size_mb": 4.76, "aspect_ratio": "3:4"
+    },
+    {
+      "file": "03_expr_shy.png",
+      "category": "表情变体",
+      "usage": "害羞（轻微低头，脸颊腮红加深，羞涩抿嘴）",
+      "width": 1792, "height": 2400, "size_mb": 4.81, "aspect_ratio": "3:4"
+    },
+    {
+      "file": "04_expr_surprise.png",
+      "category": "表情变体",
+      "usage": "惊喜（眼睛睁大，眉微扬，嘴微张成O形）",
+      "width": 1792, "height": 2400, "size_mb": 4.74, "aspect_ratio": "3:4"
+    },
+    {
+      "file": "05_expr_sad.png",
+      "category": "表情变体",
+      "usage": "难过/失落（眼神低垂，眉尾内垂，嘴角微下，眼含泪光）",
+      "width": 1792, "height": 2400, "size_mb": 4.75, "aspect_ratio": "3:4"
+    },
+    {
+      "file": "06_outfit_academy.png",
+      "category": "服装变体",
+      "usage": "学院风（白衬衫+格纹百褶裙+黑色过膝长袜+乐福鞋，全身立绘）",
+      "width": 1536, "height": 2752, "size_mb": 4.0, "aspect_ratio": "9:16"
+    },
+    {
+      "file": "07_outfit_urban.png",
+      "category": "服装变体",
+      "usage": "都市休闲（灰色廓形风衣+黑色内搭，参考图2造型，半身立绘）",
+      "width": 1792, "height": 2400, "size_mb": 5.24, "aspect_ratio": "3:4"
+    },
+    {
+      "file": "08_layer_hair.png",
+      "category": "Live2D分层部位图",
+      "usage": "头发层：前发(刘海)/侧发/后发三段分离，纯白底。注：中段附带一只耳朵，绑骨时可裁除",
+      "width": 2400, "height": 1792, "size_mb": 5.18, "aspect_ratio": "4:3",
+      "note": "含轻微瑕疵（中段一只耳朵），不影响作为参考层使用"
+    },
+    {
+      "file": "09_layer_eyes_brows.png",
+      "category": "Live2D分层部位图",
+      "usage": "眼睛+眉毛层：左右成对眼睛与流星眉，纯白底，干净可用",
+      "width": 2400, "height": 1792, "size_mb": 3.84, "aspect_ratio": "4:3"
+    },
+    {
+      "file": "10_layer_mouth.png",
+      "category": "Live2D分层部位图",
+      "usage": "嘴巴层：3种口型（闭合/微笑/微张O形），纯白底，用于口型动画",
+      "width": 2400, "height": 1792, "size_mb": 3.71, "aspect_ratio": "4:3"
+    },
+    {
+      "file": "11_layer_body.png",
+      "category": "Live2D分层部位图",
+      "usage": "身体基底层：光头肤色基底+中性面+米白背心身体，作为叠加发/眼/嘴层的底层",
+      "width": 1792, "height": 2400, "size_mb": 4.23, "aspect_ratio": "3:4"
+    }
+  ],
+  "count": 11,
+  "notes": [
+    "所有立绘与表情/服装变体均以 01_base_portrait.png 为一致性基准，逐张 image_edit 生成，五官/发型/肤质/背景保持统一。",
+    "分层部位图为参考层，背景为纯白，未做真正 alpha 透明通道；绑骨前建议用抠图工具（如 remove.bg / PS 通道）生成透明 PNG。",
+    "如需真正的透明背景 PNG 或更精细的逐层拆分（如后发单独一张、单眼单独等），可再进一步加工。"
+  ]
+}
