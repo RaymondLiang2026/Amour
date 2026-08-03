@@ -101,11 +101,10 @@ export function buildScenePanel(app){
 function setDayLabel(v){ $('#daynight-val').textContent = v<25?'夜晚':v<45?'黄昏':v<70?'正午':'白昼'; }
 
 /* ---------- 道具面板 ---------- */
-const PROPS=[{t:'stool',n:'木凳',e:'🪑'},{t:'plant',n:'绿植',e:'🪴'},{t:'lamp',n:'落地灯',e:'💡'},{t:'rug',n:'地毯',e:'🟥'},{t:'table',n:'圆桌',e:'🛋️'},{t:'books',n:'书堆',e:'📚'},{t:'teacup',n:'茶具',e:'🍵'},{t:'frame',n:'相框',e:'🖼️'}];
 export function buildPropsPanel(app){
-  const pg=$('#prop-grid'); pg.innerHTML='';
-  PROPS.forEach(p=>{ const chip=document.createElement('button'); chip.className='chip'; chip.innerHTML=`${p.e} ${p.n}`; chip.onclick=()=>{ app.scene.addProp(p.t); app.bubble(`把「${p.n}」放到舞台上啦，拖动它换个位置吧~`,'happy'); }; pg.appendChild(chip); });
-  $('#clear-props').onclick=()=>{ app.scene.clearProps(); };
+  const pg=$('#prop-grid'); if(pg) pg.innerHTML='<div class="panel-tip">当前版本已禁用低模道具，避免与主场景缩略图风格冲突。</div>';
+  const clear=$('#clear-props'); if(clear){ clear.style.display='none'; }
+  app.scene.clearProps();
 }
 
 /* ---------- 气泡 & 称呼标签 ---------- */

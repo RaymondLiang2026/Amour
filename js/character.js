@@ -63,7 +63,7 @@ function taperStrand(ctx, pts, w0, w1, color, alpha){
 }
 
 /* ---------- 预设库 ---------- */
-export const ASSET_VERSION = 'assets20260803';
+export const ASSET_VERSION = 'assets20260803b';
 const generated = name => `assets/generated/${name}.png?v=${ASSET_VERSION}`;
 const generatedPreview = name => `assets/generated/preview/${name}_preview.jpg?v=${ASSET_VERSION}`;
 

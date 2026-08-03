@@ -29,16 +29,16 @@ const SCENE_BACKGROUNDS = {
   bedroom: 'assets/bg/generated/bedroom.png',
 };
 const OUTFIT_STAGE_TEXTURES = {
-  basic: 'assets/generated/outfit_basic.png?v=assets20260803',
-  school: 'assets/generated/outfit_school.png?v=assets20260803',
-  urban: 'assets/generated/outfit_urban.png?v=assets20260803',
-  casual: 'assets/generated/outfit_casual.png?v=assets20260803',
+  basic: 'assets/generated/outfit_basic.png?v=assets20260803b',
+  school: 'assets/generated/outfit_school.png?v=assets20260803b',
+  urban: 'assets/generated/outfit_urban.png?v=assets20260803b',
+  casual: 'assets/generated/outfit_casual.png?v=assets20260803b',
 };
 const HAIR_STAGE_TEXTURES = {
-  longcurly: 'assets/generated/hair_longcurly.png?v=assets20260803',
-  shoulder: 'assets/generated/hair_shoulder.png?v=assets20260803',
-  ponytail: 'assets/generated/hair_ponytail.png?v=assets20260803',
-  short: 'assets/generated/hair_short.png?v=assets20260803',
+  longcurly: 'assets/generated/hair_longcurly.png?v=assets20260803b',
+  shoulder: 'assets/generated/hair_shoulder.png?v=assets20260803b',
+  ponytail: 'assets/generated/hair_ponytail.png?v=assets20260803b',
+  short: 'assets/generated/hair_short.png?v=assets20260803b',
 };
 
 // —— 程序化背景光晕 —— //
@@ -227,6 +227,15 @@ export class Scene3D {
         uniform float uCon;
         uniform float uWarm;
         uniform float uRim;
+        float softChromaMask(vec3 rgb) {
+          float maxC = max(max(rgb.r, rgb.g), rgb.b);
+          float minC = min(min(rgb.r, rgb.g), rgb.b);
+          float sat = maxC - minC;
+          float lum = dot(rgb, vec3(0.299, 0.587, 0.114));
+          float whiteGate = 1.0 - smoothstep(0.90, 0.985, lum);
+          float lowSatGate = 1.0 - smoothstep(0.06, 0.16, sat);
+          return 1.0 - clamp(whiteGate * lowSatGate, 0.0, 1.0);
+        }
         vec3 satCon(vec3 c, float s, float k) {
           float g = dot(c, vec3(0.299, 0.587, 0.114));
           c = mix(vec3(g), c, s);
@@ -240,7 +249,8 @@ export class Scene3D {
           if (uGenMix > 0.5) {
             vec4 gen = texture2D(uTexGen, vUv);
             float whiteDistance = distance(gen.rgb, vec3(1.0));
-            float keep = smoothstep(0.035, 0.12, whiteDistance);
+            float keep = smoothstep(0.02, 0.18, whiteDistance);
+            keep *= softChromaMask(gen.rgb);
             gen.a *= keep;
             c = gen;
           }
@@ -296,10 +306,23 @@ export class Scene3D {
     document.body.dataset.sceneTheme = theme;
     const bg = SCENE_BACKGROUNDS[theme] || SCENE_BACKGROUNDS.stage;
     document.documentElement.style.setProperty('--scene-bg-image', `url("${bg}")`);
+    if (this.bgWarm) {
+      this.bgWarm.style.display = 'block';
+      this.bgWarm.style.opacity = '1';
+      this.bgWarm.style.backgroundImage = `url("${bg}")`;
+      this.bgWarm.style.filter = 'none';
+      this.bgWarm.style.transform = 'scale(1.03)';
+    }
+    if (this.bgNight) {
+      this.bgNight.style.opacity = '0';
+      this.bgNight.style.display = 'none';
+    }
+    if (this.bgGlow) this.bgGlow.style.opacity = '0';
     // 同源视觉模式：背景由高质量图片承载，避免简陋几何体与缩略图不一致
     this.envGroup.clear();
     this.themeLights = [];
     this.themeEmissives = [];
+    this.clearProps();
     // 主题决定默认昼夜基调，随后 setDayNight 应用到 3D 灯光
     if (theme === 'bedroom') this.setDayNight(Math.min(this.cfg.daynight, 24));
     else if (theme === 'cafe') this.setDayNight(Math.max(this.cfg.daynight, 60));
@@ -390,8 +413,8 @@ export class Scene3D {
   }
   playReaction(type) { this.reaction = type; this.reactionT = 1.2; }
   playTalk() { this.talkT = 1.4; }
-  // 镜头缩放：dz<0 拉近、dz>0 拉远；z 限制在 [4.5, 11.5]，_loop 中平滑 lerp
-  zoomBy(dz) { this.camTargetZ = clamp(this.camTargetZ + dz, 4.5, 11.5); }
+  // 镜头缩放：dz<0 拉近、dz>0 拉远；范围拉大，保证用户能明显感知到拉近拉远
+  zoomBy(dz) { this.camTargetZ = clamp(this.camTargetZ + dz, 3.6, 13.5); }
   setWalkEnabled(on) { this.walkEnabled = !!on; if (this.cfg) this.cfg.walkEnabled = this.walkEnabled; }
 
   addProp(type, data = null, silent = false) {
@@ -568,9 +591,10 @@ export class Scene3D {
         this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.22);
         this.character.rotation.y = THREE.MathUtils.degToRad(this.currentViewAngle);
       } else {
-        // 目标视角角度: 高清生成素材只有正面图，启用脸模锁定，避免拖拽造成脸部漂移
+        // 目标视角角度: 生成素材只有正面图，保留轻量伪3D 旋转，不再完全锁死
         const generatedLocked = (this.cfg.assetImage || '').includes('assets/generated/');
-        const targetAngle = generatedLocked ? 0 : this.userYaw + this.aim.x * 20 + (this._walkLook || 0);
+        const rawTargetAngle = this.userYaw + this.aim.x * 20 + (this._walkLook || 0);
+        const targetAngle = generatedLocked ? clamp(rawTargetAngle, -18, 18) : rawTargetAngle;
         // 环形 lerp：沿最短路径插值，跨越 ±180 边界不抖动
         const shortestDelta = normAngle(targetAngle - this.currentViewAngle);
         this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.35);
@@ -585,7 +609,8 @@ export class Scene3D {
         u.uMix.value = m * m * (3 - 2 * m);
 
         // Plane 微倾斜制造立体感 (Y 轴旋转 - 与视角切换协同)
-        this.character.rotation.y = generatedLocked ? 0 : -this.aim.x * 0.04;
+        const tiltY = generatedLocked ? THREE.MathUtils.degToRad(this.currentViewAngle * 0.65) : -this.aim.x * 0.04;
+        this.character.rotation.y = tiltY;
 
         // 眨眼: 定时触发，眨眼期间 planeBlink 在正面附近 fade 到覆盖 planeA
         this.blinkTimer -= dt;

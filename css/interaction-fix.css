@@ -96,3 +96,20 @@ body[data-scene-theme] #bg-stage{
   background-size:cover !important;
   background-position:center !important;
 }
+
+#bg-glow,
+#bg-vignette,
+#bg-grain,
+#bg-stage::after{
+  opacity:0 !important;
+}
+
+.panel-tip{
+  padding:12px 14px;
+  border:1px solid rgba(139,175,204,.28);
+  border-radius:16px;
+  background:rgba(255,255,255,.78);
+  color:#5b6d7b;
+  font-size:13px;
+  line-height:1.6;
+}

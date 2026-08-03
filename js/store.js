@@ -12,7 +12,7 @@ export function defaultConfig(){
     outfit: 'basic',
     outfitColor: '#FDFDFD',
     assetKind: 'outfit',
-    assetImage: 'assets/generated/outfit_basic.png?v=assets20260803',
+    assetImage: 'assets/generated/outfit_basic.png?v=assets20260803b',
     accessories: { glasses:false, hairpin:true, tie:false },
     // 场景
     theme: 'stage',
@@ -45,9 +45,10 @@ function normalizeSave(data){
   const validHair = ['longcurly','shoulder','ponytail','short'];
   safe.hairStyle = validHair.includes(safe.hairStyle) ? safe.hairStyle : 'shoulder';
   safe.outfitColor = safe.outfitColor || '#FDFDFD';
+  safe.props = [];
   if (!safe.assetImage || !String(safe.assetImage).includes('assets/generated/')) {
     safe.assetKind = 'outfit';
-    safe.assetImage = 'assets/generated/outfit_basic.png?v=assets20260803';
+    safe.assetImage = 'assets/generated/outfit_basic.png?v=assets20260803b';
   }
   safe.accessories = Object.assign({ glasses:false, hairpin:true, tie:false }, safe.accessories || {});
   return safe;
