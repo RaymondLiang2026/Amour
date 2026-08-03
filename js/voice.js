@@ -3,7 +3,7 @@
 // 音色目标：真人感 · 活泼运动少女音（优选微软/谷歌中文女声，rate/pitch 上扬）
 // v2: 真人语音包（assets/voice/yui/）优先播放，无对应 MP3 时回退 Web Speech TTS
 
-const VOICE_PACK_V = 'r2d5-20260803h';
+const VOICE_PACK_V = 'r2d5-20260803i';
 const VOICE_BASE = 'assets/voice/yui/';
 
 export class Voice {

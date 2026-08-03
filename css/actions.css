@@ -117,6 +117,7 @@
   animation:s2-sticker-pop 1.2s cubic-bezier(.2,.9,.2,1) both}
 
 .s2-sticker::selection{background:transparent}
+.s2-sticker-img{width:72px;height:72px;object-fit:contain;border-radius:18px;display:block}
 
 /* 害羞：粉色光晕/脸红氛围 */
 .s2-sticker.blush{position:absolute}

@@ -2,7 +2,7 @@
 // 单一渲染出口：写实场景背景 + 写实人物六视角 180° 旋转 + 缩放 + 景深视差。
 // 纯 DOM/CSS，无 Three.js、无 shader 抠图、无低模道具，彻底避免多来源渲染打架。
 
-const V = 'r2d5-20260803h';
+const V = 'r2d5-20260803i';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -378,23 +378,16 @@ export class Scene3D {
     const el = document.createElement('div');
     el.className = `s2-sticker${cls ? ` ${cls}` : ''}`;
 
-    // 如果有表情脸图，尝试加载 PNG 作为贴纸（加载失败回退 emoji）
+    // 表情触发时优先且立即使用脸模 PNG；仅图片加载失败时回退 emoji
     if (emotionKey) {
-      const imgUrl = `assets/realistic/character/emotions/${emotionKey}.png?v=${V}`;
       const img = document.createElement('img');
-      img.src = imgUrl;
+      img.src = `assets/realistic/character/emotions/${emotionKey}.png?v=${V}`;
       img.alt = emotionKey;
-      img.style.cssText = 'width:72px;height:72px;object-fit:contain;display:block;';
-      img.onload = () => {
-        el.textContent = '';
-        el.appendChild(img);
-      };
+      img.className = 's2-sticker-img';
       img.onerror = () => {
-        // 加载失败，保持 emoji 文本
         el.textContent = sticker;
       };
-      // 先设置 emoji 作为即时展示（图片加载后替换）
-      el.textContent = sticker;
+      el.appendChild(img);
     } else {
       el.textContent = sticker;
     }

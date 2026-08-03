@@ -4,164 +4,304 @@
     "cry": [
       {
         "file": "cry_1.mp3",
-        "text": "呜呜，你要抱抱我嘛"
+        "text": "呜呜抱抱我嘛眼泪停不住啦"
       },
       {
         "file": "cry_2.mp3",
-        "text": "眼泪要掉下来啦"
+        "text": "你再晚来一秒我就哭给你看"
       },
       {
         "file": "cry_3.mp3",
-        "text": "别走嘛，我会难过的"
+        "text": "鼻子酸酸的快哄哄人家啦"
+      },
+      {
+        "file": "cry_4.mp3",
+        "text": "不许走开我现在超需要你"
+      },
+      {
+        "file": "cry_5.mp3",
+        "text": "委屈到冒泡啦要亲亲才好"
+      },
+      {
+        "file": "cry_6.mp3",
+        "text": "眼泪啪嗒啪嗒你听见没"
       }
     ],
     "laugh": [
       {
         "file": "laugh_1.mp3",
-        "text": "哈哈哈你真的好逗呀"
+        "text": "哈哈哈你太逗啦我不行了"
       },
       {
         "file": "laugh_2.mp3",
-        "text": "嘿嘿，跟你聊天真开心"
+        "text": "救命呀笑到肚子都软啦"
       },
       {
         "file": "laugh_3.mp3",
-        "text": "笑死我啦，再说一遍嘛"
+        "text": "嘿嘿跟你玩真的超开心"
+      },
+      {
+        "file": "laugh_4.mp3",
+        "text": "你怎么这么会逗我笑呀"
+      },
+      {
+        "file": "laugh_5.mp3",
+        "text": "哈哈再讲一个我还想听"
+      },
+      {
+        "file": "laugh_6.mp3",
+        "text": "笑晕啦你赢了我的快乐开关"
       }
     ],
     "shy": [
       {
         "file": "shy_1.mp3",
-        "text": "讨厌啦，人家会害羞的"
+        "text": "哎呀别盯着看我会脸红啦"
       },
       {
         "file": "shy_2.mp3",
-        "text": "你这样看我，我脸红啦"
+        "text": "你突然这么甜我心跳乱啦"
       },
       {
         "file": "shy_3.mp3",
-        "text": "小声点嘛，心跳好快"
+        "text": "小声点嘛人家害羞到冒烟"
+      },
+      {
+        "file": "shy_4.mp3",
+        "text": "讨厌啦夸得我都不会说话"
+      },
+      {
+        "file": "shy_5.mp3",
+        "text": "再靠近一点点也不是不行"
+      },
+      {
+        "file": "shy_6.mp3",
+        "text": "脸热热的都怪你太会撩"
       }
     ],
     "angry": [
       {
         "file": "angry_1.mp3",
-        "text": "哼，不理你三秒钟"
+        "text": "哼本小姐生气了哦快哄我"
       },
       {
         "file": "angry_2.mp3",
-        "text": "你再这样我真的生气啦"
+        "text": "你完蛋啦我要记小本本啦"
       },
       {
         "file": "angry_3.mp3",
-        "text": "坏蛋，不许欺负我"
+        "text": "不许装傻我真的有点气啦"
+      },
+      {
+        "file": "angry_4.mp3",
+        "text": "坏蛋再这样就扣你抱抱"
+      },
+      {
+        "file": "angry_5.mp3",
+        "text": "哼三秒内道歉还有机会"
+      },
+      {
+        "file": "angry_6.mp3",
+        "text": "气鼓鼓上线快来灭火呀"
       }
     ],
     "pout": [
       {
         "file": "pout_1.mp3",
-        "text": "哼哼，我要鼓成河豚啦"
+        "text": "哼哼我鼓成小河豚啦"
       },
       {
         "file": "pout_2.mp3",
-        "text": "不开心，要你哄哄我"
+        "text": "不开心啦你快说最喜欢我"
       },
       {
         "file": "pout_3.mp3",
-        "text": "你是不是忘记想我啦"
+        "text": "嘴巴撅起来了你看见没"
+      },
+      {
+        "file": "pout_4.mp3",
+        "text": "我才没有吃醋只是有点酸"
+      },
+      {
+        "file": "pout_5.mp3",
+        "text": "快哄我不然今天不放过你"
+      },
+      {
+        "file": "pout_6.mp3",
+        "text": "哼要抱抱才肯恢复可爱"
       }
     ],
     "silly": [
       {
         "file": "silly_1.mp3",
-        "text": "诶嘿，我刚刚发呆啦"
+        "text": "诶嘿我刚刚大脑短路啦"
       },
       {
         "file": "silly_2.mp3",
-        "text": "脑袋短路一秒钟"
+        "text": "糟糕可爱病毒又发作啦"
       },
       {
         "file": "silly_3.mp3",
-        "text": "糟糕，我又可爱迷糊啦"
+        "text": "嘿咻我把自己逗笑了耶"
+      },
+      {
+        "file": "silly_4.mp3",
+        "text": "等一下我好像忘词啦"
+      },
+      {
+        "file": "silly_5.mp3",
+        "text": "笨蛋模式开启你不许笑我"
+      },
+      {
+        "file": "silly_6.mp3",
+        "text": "哒啦啦今天也要元气满满"
       }
     ],
     "jealous": [
       {
         "file": "jealous_1.mp3",
-        "text": "你刚刚在看谁呀"
+        "text": "哼你刚刚是不是看别人啦"
       },
       {
         "file": "jealous_2.mp3",
-        "text": "哼，我才没有吃醋呢"
+        "text": "我吃醋了要你立刻解释"
       },
       {
         "file": "jealous_3.mp3",
-        "text": "你的注意力只能给我嘛"
+        "text": "不许对别人笑得那么甜嘛"
+      },
+      {
+        "file": "jealous_4.mp3",
+        "text": "你的注意力只能给我一点点"
+      },
+      {
+        "file": "jealous_5.mp3",
+        "text": "酸酸的泡泡冒出来啦快哄"
+      },
+      {
+        "file": "jealous_6.mp3",
+        "text": "我才不酸呢只是想霸占你"
       }
     ],
     "surprise": [
       {
         "file": "surprise_1.mp3",
-        "text": "哇，真的假的呀"
+        "text": "哇真的假的你也太厉害啦"
       },
       {
         "file": "surprise_2.mp3",
-        "text": "欸，你怎么突然来啦"
+        "text": "欸这也可以我眼睛亮了"
       },
       {
         "file": "surprise_3.mp3",
-        "text": "天呐，这也太惊喜了"
+        "text": "天呐你居然记得我超开心"
+      },
+      {
+        "file": "surprise_4.mp3",
+        "text": "哇哦惊喜来得也太突然啦"
+      },
+      {
+        "file": "surprise_5.mp3",
+        "text": "咦你怎么猜到我的小心思"
+      },
+      {
+        "file": "surprise_6.mp3",
+        "text": "哇我被你可爱到愣住啦"
       }
     ],
     "spoiled": [
       {
         "file": "spoiled_1.mp3",
-        "text": "陪陪我嘛，就一下下"
+        "text": "就要嘛就要嘛答应人家啦"
       },
       {
         "file": "spoiled_2.mp3",
-        "text": "人家想听你夸夸我"
+        "text": "陪我一下下好不好嘛"
       },
       {
         "file": "spoiled_3.mp3",
-        "text": "抱抱我，好不好嘛"
+        "text": "拜托拜托你最好啦亲亲"
+      },
+      {
+        "file": "spoiled_4.mp3",
+        "text": "不管今天就想黏着你"
+      },
+      {
+        "file": "spoiled_5.mp3",
+        "text": "给我抱一下我就乖乖的"
+      },
+      {
+        "file": "spoiled_6.mp3",
+        "text": "你答应我嘛我会超开心"
       }
     ],
     "grievance": [
       {
         "file": "grievance_1.mp3",
-        "text": "我有一点点委屈啦"
+        "text": "明明我很乖你还凶我"
       },
       {
         "file": "grievance_2.mp3",
-        "text": "你是不是不喜欢我了"
+        "text": "心里小雨下不停快撑伞"
       },
       {
         "file": "grievance_3.mp3",
-        "text": "明明我很乖的嘛"
+        "text": "我有一点点难过你发现没"
+      },
+      {
+        "file": "grievance_4.mp3",
+        "text": "委屈巴巴等你来抱抱我"
+      },
+      {
+        "file": "grievance_5.mp3",
+        "text": "你不理我我会缩成一团"
+      },
+      {
+        "file": "grievance_6.mp3",
+        "text": "好啦我没事但想被你哄"
       }
     ]
   },
   "greet": [
     {
       "file": "greet_1.mp3",
-      "text": "嗨，今天也想我了吗"
+      "text": "嘿嘿你终于来啦想我没"
     },
     {
       "file": "greet_2.mp3",
-      "text": "你来啦，我等你好久啦"
+      "text": "今天也要被我元气充满哦"
     },
     {
       "file": "greet_3.mp3",
-      "text": "点到我啦，要陪我聊天吗"
+      "text": "早呀我的专属快乐电量上线"
     },
     {
       "file": "greet_4.mp3",
-      "text": "主人，Yui上线咯"
+      "text": "来啦来啦快坐到我旁边"
     },
     {
       "file": "greet_5.mp3",
-      "text": "嘿嘿，见到你真开心"
+      "text": "叮咚你的活力女友出现啦"
+    },
+    {
+      "file": "greet_6.mp3",
+      "text": "我等你好久啦快夸夸我"
+    },
+    {
+      "file": "greet_7.mp3",
+      "text": "今天想听我撒娇还是讲笑话"
+    },
+    {
+      "file": "greet_8.mp3",
+      "text": "欢迎回来先给你一个抱抱"
+    },
+    {
+      "file": "greet_9.mp3",
+      "text": "嘿你一来空气都变甜啦"
+    },
+    {
+      "file": "greet_10.mp3",
+      "text": "准备好了吗Yui要陪你啦"
     }
   ]
 }
