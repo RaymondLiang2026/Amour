@@ -135,3 +135,44 @@
   42%{opacity:1;transform:translate(-50%,0) scale(1.08)}
   100%{opacity:0;transform:translate(-50%,-14px) scale(.92)}
 }
+
+
+/* ========= 骨架分层动作按钮 ========= */
+.rig-action-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,224,180,.18)}
+.rig-action-label{font-size:12px;font-weight:800;color:#ffe7bd;text-shadow:0 1px 4px rgba(0,0,0,.35);margin-right:2px}
+.rig-action-btn{width:34px;height:34px;border-radius:999px;border:1px solid rgba(255,224,180,.32);background:linear-gradient(180deg,rgba(255,246,220,.22),rgba(80,44,24,.25));color:#fff3d6;box-shadow:0 6px 16px rgba(0,0,0,.18);cursor:pointer;transition:transform .16s ease,filter .16s ease}
+.rig-action-btn:hover{transform:translateY(-2px) scale(1.06);filter:brightness(1.12)}
+
+/* ========= DOM rig 骨架动作：full 视角旋转部位，limited 侧面整体轻动作 ========= */
+.s2-rig-layer.rig-action{animation-duration:1.35s;animation-timing-function:cubic-bezier(.2,.85,.2,1);animation-fill-mode:both}
+.s2-rig-layer.rig-limited{animation-name:s2-rig-limited}
+@keyframes s2-rig-limited{0%,100%{transform:translateX(-50%) translateY(0) rotateZ(0) scale(1)}25%{transform:translateX(-50%) translateY(-1.8%) rotateZ(-2deg) scale(1.01)}55%{transform:translateX(-50%) translateY(.5%) rotateZ(2deg) scale(.995,1.008)}78%{transform:translateX(-50%) translateY(-.8%) rotateZ(-1deg) scale(1.004)}}
+
+.s2-rig-layer.rig-jump{animation-name:s2-rig-jump}
+@keyframes s2-rig-jump{0%,100%{transform:translateX(-50%) translateY(0) scale(1)}18%{transform:translateX(-50%) translateY(0) scale(1.04,.94)}48%{transform:translateX(-50%) translateY(-7%) scale(.98,1.03)}72%{transform:translateX(-50%) translateY(0) scale(1.02,.96)}}
+.s2-rig-layer.rig-dance{animation-name:s2-rig-dance}
+@keyframes s2-rig-dance{0%,100%{transform:translateX(-50%) rotateZ(0)}20%{transform:translateX(calc(-50% - 2.5%)) rotateZ(-3deg)}45%{transform:translateX(calc(-50% + 2.5%)) rotateZ(3deg)}70%{transform:translateX(calc(-50% - 1.5%)) rotateZ(-2deg)}}
+
+.rig-wave .part-upperArm_L,.rig-wave .part-forearm_L,.rig-wave .part-hand_L{animation:s2-rig-wave-l 1.18s ease-in-out both}
+.rig-wave .part-forearm_L,.rig-wave .part-hand_L{animation-name:s2-rig-wave-fore}
+@keyframes s2-rig-wave-l{0%,100%{transform:rotate(0)}20%{transform:rotate(-18deg)}45%{transform:rotate(-34deg)}70%{transform:rotate(-20deg)}}
+@keyframes s2-rig-wave-fore{0%,100%{transform:rotate(0)}18%{transform:rotate(-45deg)}36%{transform:rotate(-12deg)}54%{transform:rotate(-52deg)}76%{transform:rotate(-18deg)}}
+.rig-nod .part-head,.rig-nod .part-neck{animation:s2-rig-nod-head .82s ease-in-out both}.rig-nod .part-chest{animation:s2-rig-nod-body .82s ease-in-out both}
+@keyframes s2-rig-nod-head{0%,100%{transform:rotate(0)}32%{transform:rotate(10deg)}65%{transform:rotate(-4deg)}}
+@keyframes s2-rig-nod-body{0%,100%{transform:rotate(0)}36%{transform:rotate(2.5deg)}}
+.rig-shake .part-head,.rig-shake .part-neck{animation:s2-rig-shake-head .9s ease-in-out both}
+@keyframes s2-rig-shake-head{0%,100%{transform:rotate(0)}15%{transform:rotate(-9deg)}30%{transform:rotate(9deg)}48%{transform:rotate(-7deg)}66%{transform:rotate(6deg)}82%{transform:rotate(-3deg)}}
+.rig-stretch .part-chest,.rig-stretch .part-abdomen{animation:s2-rig-stretch-body 1.2s ease-in-out both}.rig-stretch .part-upperArm_L,.rig-stretch .part-forearm_L,.rig-stretch .part-hand_L{animation:s2-rig-stretch-l 1.2s ease-in-out both}.rig-stretch .part-upperArm_R,.rig-stretch .part-forearm_R,.rig-stretch .part-hand_R{animation:s2-rig-stretch-r 1.2s ease-in-out both}
+@keyframes s2-rig-stretch-body{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(-1.2%) scale(1.015,1.03)}}
+@keyframes s2-rig-stretch-l{0%,100%{transform:rotate(0)}42%,70%{transform:rotate(-28deg)}}
+@keyframes s2-rig-stretch-r{0%,100%{transform:rotate(0)}42%,70%{transform:rotate(28deg)}}
+.rig-dance .part-head{animation:s2-rig-dance-head 1.22s ease-in-out both}.rig-dance .part-upperArm_L,.rig-dance .part-forearm_L{animation:s2-rig-dance-arm-l 1.22s ease-in-out both}.rig-dance .part-upperArm_R,.rig-dance .part-forearm_R{animation:s2-rig-dance-arm-r 1.22s ease-in-out both}.rig-dance .part-thigh_L,.rig-dance .part-calf_L{animation:s2-rig-dance-leg-l 1.22s ease-in-out both}.rig-dance .part-thigh_R,.rig-dance .part-calf_R{animation:s2-rig-dance-leg-r 1.22s ease-in-out both}
+@keyframes s2-rig-dance-head{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}55%{transform:rotate(5deg)}}
+@keyframes s2-rig-dance-arm-l{0%,100%{transform:rotate(0)}25%{transform:rotate(-18deg)}55%{transform:rotate(16deg)}}
+@keyframes s2-rig-dance-arm-r{0%,100%{transform:rotate(0)}25%{transform:rotate(16deg)}55%{transform:rotate(-18deg)}}
+@keyframes s2-rig-dance-leg-l{0%,100%{transform:rotate(0)}30%{transform:rotate(7deg)}60%{transform:rotate(-5deg)}}
+@keyframes s2-rig-dance-leg-r{0%,100%{transform:rotate(0)}30%{transform:rotate(-7deg)}60%{transform:rotate(5deg)}}
+.rig-jump .part-thigh_L,.rig-jump .part-thigh_R{animation:s2-rig-jump-leg 1.05s ease-in-out both}.rig-jump .part-calf_L,.rig-jump .part-calf_R{animation:s2-rig-jump-calf 1.05s ease-in-out both}.rig-jump .part-upperArm_L,.rig-jump .part-upperArm_R{animation:s2-rig-jump-arm 1.05s ease-in-out both}
+@keyframes s2-rig-jump-leg{0%,100%{transform:rotate(0)}18%{transform:rotate(5deg)}50%{transform:rotate(-8deg)}}
+@keyframes s2-rig-jump-calf{0%,100%{transform:rotate(0)}18%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
+@keyframes s2-rig-jump-arm{0%,100%{transform:rotate(0)}45%{transform:rotate(-14deg)}}

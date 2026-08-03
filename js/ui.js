@@ -25,7 +25,7 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
 /* ---------- 构建外观面板（写实六视角造型：换发型 / 发色 / 服装） ---------- */
 // 说明：写实预渲染无法做「任意维度自由组合」（组合爆炸），故每个选项 = 一套完整六视角造型，
 // 以其余两项默认值（齐肩·黑·日常）为基线；base 即当前默认套（assets/realistic/character/*）。
-const LOOK_V='r2d5-20260803j';
+const LOOK_V='r2d5-20260803m';
 const CHAR_LOOKS={
   hair:[
     {id:'base',          name:'齐肩', e:'💇‍♀️'},
@@ -91,9 +91,9 @@ function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoj
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
-  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803j'},
-  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803j'},
-  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803j'},
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803m'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803m'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803m'},
 ];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
@@ -132,6 +132,14 @@ const EMOTION_UI=[
   {key:'spoiled',   emoji:'🥰', title:'撒娇'},
   {key:'grievance', emoji:'🥺', title:'委屈'},
 ];
+const RIG_ACTION_UI=[
+  {key:'wave', emoji:'👋', title:'挥手'},
+  {key:'nod', emoji:'🙂', title:'点头'},
+  {key:'jump', emoji:'⬆️', title:'跳一下'},
+  {key:'dance', emoji:'🎵', title:'跳舞'},
+  {key:'stretch', emoji:'🙆‍♀️', title:'伸展'},
+  {key:'shake', emoji:'↔️', title:'摇头'},
+];
 
 export function buildEmotionBar(app){
   const bar=$('#emotion-bar');
@@ -157,6 +165,29 @@ export function buildEmotionBar(app){
     };
     bar.appendChild(b);
   });
+
+  const rigRow=document.createElement('div');
+  rigRow.className='rig-action-row';
+  const label=document.createElement('span');
+  label.className='rig-action-label';
+  label.textContent='骨架动作';
+  rigRow.appendChild(label);
+  RIG_ACTION_UI.forEach(it=>{
+    const b=document.createElement('button');
+    b.className='rig-action-btn';
+    b.type='button';
+    b.textContent=it.emoji;
+    b.title=it.title;
+    b.setAttribute('aria-label', `骨架动作：${it.title}`);
+    b.onclick=()=>{
+      app.scene.playRigAction(it.key,{source:'bar'});
+      awardAffinity(app,1);
+      $('#mood-text').textContent='骨架动作：'+it.title;
+      $('#mood-emoji').textContent=it.emoji;
+    };
+    rigRow.appendChild(b);
+  });
+  bar.appendChild(rigRow);
 }
 
 export function emotionMeta(key){

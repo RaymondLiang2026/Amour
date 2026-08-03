@@ -2,7 +2,7 @@
 // 单一渲染出口：写实场景背景 + 写实人物六视角 180° 旋转 + 缩放 + 景深视差。
 // 纯 DOM/CSS，无 Three.js、无 shader 抠图、无低模道具，彻底避免多来源渲染打架。
 
-const V = 'r2d5-20260803j';
+const V = 'r2d5-20260803m';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -18,6 +18,15 @@ const CHAR = (name, look) => (look && look !== 'base')
   ? `assets/realistic/character/looks/${look}/${name}.png?v=${V}`
   : `assets/realistic/character/${name}.png?v=${V}`;
 const VIEW_NAMES = ['back', 'l90', 'l45', 'front', 'r45', 'r90'];
+const RIG_ACTIONS = ['wave', 'nod', 'shake', 'dance', 'jump', 'stretch'];
+const RIG_LINES = {
+  wave: '我挥挥手啦～',
+  nod: '嗯嗯，我点头啦。',
+  shake: '我摇摇头～',
+  dance: '跟我一起跳舞吧！',
+  jump: '我跳一下！',
+  stretch: '伸个懒腰～',
+};
 // 角度停靠点（度）：拖拽横向改变 yaw，就近取相邻两张做 crossfade
 const STOPS = [
   { a: -180, v: 'back' },
@@ -141,6 +150,10 @@ export class Scene3D {
     this._actClass = null;
     this._actTimer = 0;
     this._actEnd = null;
+    this._rigLayer = null;
+    this._rigCache = new Map();
+    this._rigTimer = 0;
+    this._rigActionClass = null;
 
     this._hideLegacyLayers();
     this._buildDom();
@@ -283,9 +296,13 @@ export class Scene3D {
         const dt = now - wasDrag.t0;
         const dist = wasDrag.moved;
         if (dist < 8 && dt < 300) {
-          const emotion = pick(EMOTION_KEYS) || 'laugh';
-          this.playEmotion(emotion, { emitLine: true, source: 'click' });
-          this.cbs.onCharacterClick?.('body', { silentBubble: true, emotion, source: 'click' });
+          if (Math.random() < 0.28) {
+            this.playRigAction(pick(RIG_ACTIONS), { source: 'click' });
+          } else {
+            const emotion = pick(EMOTION_KEYS) || 'laugh';
+            this.playEmotion(emotion, { emitLine: true, source: 'click' });
+            this.cbs.onCharacterClick?.('body', { silentBubble: true, emotion, source: 'click' });
+          }
         }
       }
     };
@@ -495,6 +512,99 @@ export class Scene3D {
     this.playAction('nod');
   }
 
+  _currentViewName() {
+    let best = STOPS[0];
+    let dist = Infinity;
+    STOPS.forEach(s => {
+      const d = Math.abs(this.yawDisp - s.a);
+      if (d < dist) { dist = d; best = s; }
+    });
+    return best.v || 'front';
+  }
+
+  async _loadRig(look, view) {
+    const key = `${look}/${view}`;
+    if (this._rigCache.has(key)) return this._rigCache.get(key);
+    const base = `assets/rig/${look}/${view}`;
+    const res = await fetch(`${base}/rig.json?v=${V}`);
+    if (!res.ok) throw new Error(`rig json ${res.status}`);
+    const rig = await res.json();
+    const parts = Object.entries(rig.parts || {})
+      .map(([name, meta]) => ({ name, ...meta }))
+      .sort((a, b) => (a.z_order || 0) - (b.z_order || 0));
+    if (!parts.length) throw new Error('rig has no parts');
+    const data = { base, rig, parts };
+    this._rigCache.set(key, data);
+    return data;
+  }
+
+  _hideRig() {
+    if (this._rigTimer) clearTimeout(this._rigTimer);
+    this._rigTimer = 0;
+    if (this._rigLayer) this._rigLayer.remove();
+    this._rigLayer = null;
+    this._rigActionClass = null;
+    if (this.actor) this.actor.classList.remove('s2-rig-active');
+  }
+
+  _setRigPartTransformOrigin(img, rig, part) {
+    const pivotName = part.pivot;
+    const pivot = rig.joints?.[pivotName];
+    if (!pivot) return;
+    img.style.transformOrigin = `${(pivot.x * 100).toFixed(2)}% ${(pivot.y * 100).toFixed(2)}%`;
+  }
+
+  async _ensureRigLayer() {
+    const look = this.look || 'base';
+    const view = this._currentViewName();
+    const data = await this._loadRig(look, view);
+    const layer = document.createElement('div');
+    layer.className = 's2-rig-layer';
+    layer.dataset.rigType = data.rig.rig_type || 'limited';
+
+    await Promise.all(data.parts.map(part => new Promise((resolve, reject) => {
+      const img = document.createElement('img');
+      img.className = `s2-rig-part part-${part.name}`;
+      img.src = `${data.base}/part_${part.name}.png?v=${V}`;
+      img.alt = part.name;
+      img.draggable = false;
+      img.style.zIndex = String(part.z_order || 0);
+      this._setRigPartTransformOrigin(img, data.rig, part);
+      img.onload = resolve;
+      img.onerror = () => reject(new Error(`part load failed: ${part.name}`));
+      layer.appendChild(img);
+    })));
+
+    this._hideRig();
+    this._rigLayer = layer;
+    this.actor.insertBefore(layer, this.fxLayer || null);
+    this.actor.classList.add('s2-rig-active');
+    return data;
+  }
+
+  async playRigAction(name, opts = {}) {
+    if (!this.actor) return;
+    const act = RIG_ACTIONS.includes((name || '').toLowerCase()) ? name.toLowerCase() : pick(RIG_ACTIONS);
+    const line = opts.line || RIG_LINES[act] || '我动起来啦～';
+
+    try {
+      const data = await this._ensureRigLayer();
+      const full = data.rig.rig_type === 'full';
+      const cls = `rig-${full ? act : 'limited'} rig-action`;
+      this._rigActionClass = cls;
+      this._rigLayer.className = `s2-rig-layer ${cls}`;
+      this._rigLayer.dataset.rigType = data.rig.rig_type || 'limited';
+      this.cbs.onAutoTalk?.(full ? line : '侧面视角使用轻动作～', act, { skipSceneReaction: true });
+      this.spawnEffect(full ? '✨' : '💫', full ? 6 : 4);
+      this._rigTimer = setTimeout(() => this._hideRig(), full ? 1550 : 1250);
+    } catch (err) {
+      console.warn('[rig] fallback to sprite action', err);
+      this._hideRig();
+      this.playAction(act === 'dance' ? 'sway' : act);
+      this.cbs.onAutoTalk?.(line, act, { skipSceneReaction: true });
+    }
+  }
+
   /* ---------- 外部接口（与旧 Scene3D 兼容） ---------- */
   applyTheme(theme) {
     this.theme = theme;
@@ -507,6 +617,7 @@ export class Scene3D {
 
   // 切换造型：整套六视角素材热替换，保持当前旋转角/缩放/视差状态不变
   applyLook(look) {
+    this._hideRig();
     this.look = look || 'base';
     this.cfg.look = this.look;
     VIEW_NAMES.forEach(n => { if (this.imgs[n]) this.imgs[n].src = CHAR(n, this.look); });
@@ -557,6 +668,7 @@ export class Scene3D {
     this.setDayNight(typeof this.cfg.daynight === 'number' ? this.cfg.daynight : this.daynight);
     this.walkEnabled = this.cfg.walkEnabled !== false;
     const look = this.cfg.look || 'base';
+    this._hideRig();
     if (look !== this.look) this.applyLook(look);
   }
 
