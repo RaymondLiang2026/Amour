@@ -29,16 +29,16 @@ const SCENE_BACKGROUNDS = {
   bedroom: 'assets/bg/generated/bedroom.png',
 };
 const OUTFIT_STAGE_TEXTURES = {
-  base: 'assets/character/stage_variants/outfit_base.png',
-  academy: 'assets/character/stage_variants/outfit_academy.png',
-  coat: 'assets/character/stage_variants/outfit_coat.png',
-  hoodie: 'assets/character/stage_variants/outfit_hoodie.png',
+  basic: 'assets/generated/outfit_basic.png?v=assets20260803',
+  school: 'assets/generated/outfit_school.png?v=assets20260803',
+  urban: 'assets/generated/outfit_urban.png?v=assets20260803',
+  casual: 'assets/generated/outfit_casual.png?v=assets20260803',
 };
 const HAIR_STAGE_TEXTURES = {
-  long_wavy: 'assets/character/stage_variants/hair_long_wavy.png',
-  bob: 'assets/character/stage_variants/hair_bob.png',
-  ponytail: 'assets/character/stage_variants/hair_ponytail.png',
-  short: 'assets/character/stage_variants/hair_short.png',
+  longcurly: 'assets/generated/hair_longcurly.png?v=assets20260803',
+  shoulder: 'assets/generated/hair_shoulder.png?v=assets20260803',
+  ponytail: 'assets/generated/hair_ponytail.png?v=assets20260803',
+  short: 'assets/generated/hair_short.png?v=assets20260803',
 };
 
 // —— 程序化背景光晕 —— //
@@ -201,6 +201,8 @@ export class Scene3D {
       uniforms: {
         uTexA: { value: this.textures.front },
         uTexB: { value: this.textures.r45 || this.textures.front },
+        uTexGen: { value: null },
+        uGenMix: { value: 0.0 },
         uMix:  { value: 0.0 },
         uSat:  { value: 1.08 },  // 轻微提高饱和度
         uCon:  { value: 1.04 },  // 轻微提高对比
@@ -218,6 +220,8 @@ export class Scene3D {
         varying vec2 vUv;
         uniform sampler2D uTexA;
         uniform sampler2D uTexB;
+        uniform sampler2D uTexGen;
+        uniform float uGenMix;
         uniform float uMix;
         uniform float uSat;
         uniform float uCon;
@@ -233,6 +237,13 @@ export class Scene3D {
           vec4 a = texture2D(uTexA, vUv);
           vec4 b = texture2D(uTexB, vUv);
           vec4 c = mix(a, b, uMix);
+          if (uGenMix > 0.5) {
+            vec4 gen = texture2D(uTexGen, vUv);
+            float whiteDistance = distance(gen.rgb, vec3(1.0));
+            float keep = smoothstep(0.035, 0.12, whiteDistance);
+            gen.a *= keep;
+            c = gen;
+          }
           if (c.a < 0.02) discard;
           vec3 rgb = satCon(c.rgb, uSat, uCon);
           // 暖色略偏
@@ -250,8 +261,8 @@ export class Scene3D {
 
     // 眨眼 Plane 独立：仅覆盖正面视角
     const matBlink = new THREE.MeshBasicMaterial({ map: this.textures.blink || this.textures.front, transparent: true, alphaTest: 0.02, depthWrite: false, opacity: 0 });
-    const outfitMat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.03, depthWrite: false, opacity: 0.58 });
-    const hairMat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.03, depthWrite: false, opacity: 0.55 });
+    const outfitMat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.03, depthWrite: false, opacity: 0 });
+    const hairMat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.03, depthWrite: false, opacity: 0 });
 
     this.planeMain = new THREE.Mesh(geo, shaderMat);
     this.planeOutfit = new THREE.Mesh(geo, outfitMat);
@@ -348,10 +359,21 @@ export class Scene3D {
     plane.visible = visible;
   }
   _syncVariantPlanes() {
-    const outfit = this.cfg.outfit || 'base';
-    const hair = this.cfg.hairStyle || 'bob';
-    this._syncVariantPlane(this.planeOutfit, `outfit:${outfit}`, OUTFIT_STAGE_TEXTURES[outfit] || OUTFIT_STAGE_TEXTURES.base, outfit !== 'base', this.cfg.outfitColor || 0xffffff);
-    this._syncVariantPlane(this.planeHair, `hair:${hair}`, HAIR_STAGE_TEXTURES[hair] || HAIR_STAGE_TEXTURES.bob, true, this.cfg.hairColor || 0xffffff);
+    const activeAsset = this.cfg.assetImage || '';
+    const usesGeneratedAsset = activeAsset.includes('assets/generated/');
+    if (usesGeneratedAsset && this.mainMat?.uniforms) {
+      const tex = this._getVariantTexture(`generated:${activeAsset}`, activeAsset);
+      this.mainMat.uniforms.uTexGen.value = tex;
+      this.mainMat.uniforms.uGenMix.value = 1;
+      if (this.planeOutfit) this.planeOutfit.visible = false;
+      if (this.planeHair) this.planeHair.visible = false;
+      return;
+    }
+    if (this.mainMat?.uniforms) this.mainMat.uniforms.uGenMix.value = 0;
+    const outfit = this.cfg.outfit || 'basic';
+    const hair = this.cfg.hairStyle || 'shoulder';
+    this._syncVariantPlane(this.planeOutfit, `outfit:${outfit}`, OUTFIT_STAGE_TEXTURES[outfit] || OUTFIT_STAGE_TEXTURES.basic, outfit !== 'basic', this.cfg.outfitColor || 0xffffff);
+    this._syncVariantPlane(this.planeHair, `hair:${hair}`, HAIR_STAGE_TEXTURES[hair] || HAIR_STAGE_TEXTURES.shoulder, true, this.cfg.hairColor || 0xffffff);
   }
   redrawCharacter() {
     this.applyLight(this.cfg.light);
@@ -546,8 +568,9 @@ export class Scene3D {
         this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.22);
         this.character.rotation.y = THREE.MathUtils.degToRad(this.currentViewAngle);
       } else {
-        // 目标视角角度: 拖拽 userYaw 主导 + hover 微视差 ±20° + 走动看向（叠加）
-        const targetAngle = this.userYaw + this.aim.x * 20 + (this._walkLook || 0);
+        // 目标视角角度: 高清生成素材只有正面图，启用脸模锁定，避免拖拽造成脸部漂移
+        const generatedLocked = (this.cfg.assetImage || '').includes('assets/generated/');
+        const targetAngle = generatedLocked ? 0 : this.userYaw + this.aim.x * 20 + (this._walkLook || 0);
         // 环形 lerp：沿最短路径插值，跨越 ±180 边界不抖动
         const shortestDelta = normAngle(targetAngle - this.currentViewAngle);
         this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.35);
@@ -562,7 +585,7 @@ export class Scene3D {
         u.uMix.value = m * m * (3 - 2 * m);
 
         // Plane 微倾斜制造立体感 (Y 轴旋转 - 与视角切换协同)
-        this.character.rotation.y = -this.aim.x * 0.04;
+        this.character.rotation.y = generatedLocked ? 0 : -this.aim.x * 0.04;
 
         // 眨眼: 定时触发，眨眼期间 planeBlink 在正面附近 fade 到覆盖 planeA
         this.blinkTimer -= dt;

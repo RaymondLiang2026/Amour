@@ -36,11 +36,11 @@ export function buildAppearancePanel(app){
       renderCharTo(cv, {...cfg, hairStyle:h.id}, {focusHead:true});
     }
     const lb=document.createElement('span'); lb.className='thumb-label'; lb.textContent=h.name; btn.appendChild(lb);
-    btn.onclick=()=>{ cfg.hairStyle=h.id; refreshSelected(hg,btn); app.updateChar(); markApplied(app,'发型已更新'); };
+    btn.onclick=()=>{ cfg.hairStyle=h.id; cfg.assetKind='hair'; cfg.assetImage=h.image; refreshSelected(hg,btn); app.updateChar(); markApplied(app,'发型已更新'); };
     hg.appendChild(btn);
   });
   // 发色
-  buildSwatches($('#hair-swatches'), HAIR_SWATCHES, cfg.hairColor, (c)=>{ cfg.hairColor=c; $('#hair-color').value=c; app.updateChar(); refreshHairThumbs(app); markApplied(app,'发色已更新'); });
+  buildSwatches($('#hair-swatches'), HAIR_SWATCHES, cfg.hairColor, (c, item)=>{ cfg.hairColor=c; cfg.hairColorId=item?.id || ''; cfg.assetKind='hairColor'; cfg.assetImage=item?.image || ''; $('#hair-color').value=c; app.updateChar(); refreshHairThumbs(app); markApplied(app,'发色已更新'); });
   $('#hair-color').value=cfg.hairColor; $('#hair-color').oninput=(e)=>{ cfg.hairColor=e.target.value; app.updateChar(); refreshHairThumbs(app); };
   // 服装
   refreshOutfitThumbs(app);
@@ -69,11 +69,11 @@ function refreshOutfitThumbs(app){
       renderCharTo(cv, {...cfg, outfit:o.id, outfitColor:o.color}, {focusHead:false});
     }
     const lb=document.createElement('span'); lb.className='thumb-label'; lb.textContent=o.name; btn.appendChild(lb);
-    btn.onclick=()=>{ cfg.outfit=o.id; cfg.outfitColor=o.color; $('#outfit-color').value=o.color; app.updateChar(); refreshOutfitThumbs(app); markApplied(app,'服装已更新'); };
+    btn.onclick=()=>{ cfg.outfit=o.id; cfg.outfitColor=o.color; cfg.assetKind='outfit'; cfg.assetImage=o.stage; $('#outfit-color').value=o.color; app.updateChar(); refreshOutfitThumbs(app); markApplied(app,'服装已更新'); };
     og.appendChild(btn);
   });
 }
-function buildSwatches(wrap, colors, active, onPick){ wrap.innerHTML=''; colors.forEach(c=>{ const s=document.createElement('button'); s.type='button'; s.className='swatch'+(c.toLowerCase()===String(active).toLowerCase()?' selected':''); s.style.background=c; s.onclick=()=>{ $$('.swatch',wrap).forEach(x=>x.classList.remove('selected')); s.classList.add('selected'); onPick(c); }; wrap.appendChild(s); }); }
+function buildSwatches(wrap, colors, active, onPick){ wrap.innerHTML=''; colors.forEach(item=>{ const c=typeof item==='string'?item:item.color; const s=document.createElement('button'); s.type='button'; s.className='swatch'+(c.toLowerCase()===String(active).toLowerCase()?' selected':''); s.style.background=c; if(item.thumb){ s.style.backgroundImage=`url("${item.thumb}")`; s.style.backgroundSize='cover'; s.style.backgroundPosition='center'; s.title=item.name; } s.onclick=()=>{ $$('.swatch',wrap).forEach(x=>x.classList.remove('selected')); s.classList.add('selected'); onPick(c,item); }; wrap.appendChild(s); }); }
 function refreshSelected(wrap, active){ $$('.thumb',wrap).forEach(t=>t.classList.remove('selected')); active.classList.add('selected'); }
 function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoji').textContent='✨'; if(app.scene) app.scene.playReaction('happy'); }
 

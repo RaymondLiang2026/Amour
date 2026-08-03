@@ -63,24 +63,44 @@ function taperStrand(ctx, pts, w0, w1, color, alpha){
 }
 
 /* ---------- 预设库 ---------- */
+export const ASSET_VERSION = 'assets20260803';
+const generated = name => `assets/generated/${name}.png?v=${ASSET_VERSION}`;
+const generatedPreview = name => `assets/generated/preview/${name}_preview.jpg?v=${ASSET_VERSION}`;
+
 export const HAIR_STYLES = [
-  {id:'long_wavy', name:'栗棕长卷', thumb:'assets/character/thumbs/hair_long_wavy.png'},
-  {id:'bob',       name:'齐肩短发', thumb:'assets/character/thumbs/hair_bob.png'},
-  {id:'ponytail',  name:'高马尾',   thumb:'assets/character/thumbs/hair_ponytail.png'},
-  {id:'short',     name:'利落短发', thumb:'assets/character/thumbs/hair_short.png'},
+  {id:'longcurly', name:'长卷发', thumb:generatedPreview('hair_longcurly'), image:generated('hair_longcurly')},
+  {id:'shoulder',  name:'齐肩短发', thumb:generatedPreview('hair_shoulder'), image:generated('hair_shoulder')},
+  {id:'ponytail',  name:'高马尾',   thumb:generatedPreview('hair_ponytail'), image:generated('hair_ponytail')},
+  {id:'short',     name:'利落短发', thumb:generatedPreview('hair_short'), image:generated('hair_short')},
 ];
 export const OUTFITS = [
-  {id:'base',    name:'基础',   color:'#FDFDFD', image:'assets/character/thumbs/outfit_base.png'},
-  {id:'academy', name:'学院风', color:'#3b5a8c', image:'assets/character/thumbs/outfit_academy.png'},
-  {id:'coat',    name:'都市风衣',color:'#707070', image:'assets/character/thumbs/outfit_urban.png'},
-  {id:'hoodie',  name:'休闲卫衣',color:'#e8e0d4', image:'assets/character/thumbs/outfit_hoodie.png'},
+  {id:'basic',    name:'基础',     color:'#FDFDFD', image:generatedPreview('outfit_basic'), stage:generated('outfit_basic')},
+  {id:'school',   name:'学院风',   color:'#3b5a8c', image:generatedPreview('outfit_school'), stage:generated('outfit_school')},
+  {id:'urban',    name:'都市风衣', color:'#707070', image:generatedPreview('outfit_urban'), stage:generated('outfit_urban')},
+  {id:'casual',   name:'休闲装',   color:'#e8e0d4', image:generatedPreview('outfit_casual'), stage:generated('outfit_casual')},
+  {id:'boxing',   name:'拳击训练', color:'#e7edf7', image:generatedPreview('outfit_boxing'), stage:generated('outfit_boxing')},
+  {id:'street1',  name:'街头 01', color:'#dad7d0', image:generatedPreview('outfit_street1'), stage:generated('outfit_street1')},
+  {id:'street2',  name:'街头 02', color:'#cdd6e6', image:generatedPreview('outfit_street2'), stage:generated('outfit_street2')},
+  {id:'street3',  name:'街头 03', color:'#e5d5cc', image:generatedPreview('outfit_street3'), stage:generated('outfit_street3')},
+  {id:'street4',  name:'街头 04', color:'#d9dce3', image:generatedPreview('outfit_street4'), stage:generated('outfit_street4')},
+  {id:'street5',  name:'街头 05', color:'#e1d8cf', image:generatedPreview('outfit_street5'), stage:generated('outfit_street5')},
+  {id:'street6',  name:'街头 06', color:'#d6dee8', image:generatedPreview('outfit_street6'), stage:generated('outfit_street6')},
+  {id:'street7',  name:'街头 07', color:'#ddd1c6', image:generatedPreview('outfit_street7'), stage:generated('outfit_street7')},
+  {id:'street8',  name:'街头 08', color:'#d9d9df', image:generatedPreview('outfit_street8'), stage:generated('outfit_street8')},
+  {id:'street9',  name:'街头 09', color:'#e3d6ca', image:generatedPreview('outfit_street9'), stage:generated('outfit_street9')},
+  {id:'street10', name:'街头 10', color:'#d9e0e8', image:generatedPreview('outfit_street10'), stage:generated('outfit_street10')},
 ];
 export const ACCESSORIES = [
   {id:'glasses', name:'眼镜', icon:'👓'},
   {id:'hairpin', name:'发饰', icon:'🌸'},
   {id:'tie',     name:'领带', icon:'👔'},
 ];
-export const HAIR_SWATCHES = ['#2D2926','#6b4a2f','#3a2418','#c9a25e','#8a4b3a','#b56b8f'];
+export const HAIR_SWATCHES = [
+  {id:'black', name:'黑发', color:'#2D2926', thumb:generatedPreview('haircolor_black'), image:generated('haircolor_black')},
+  {id:'brown', name:'棕发', color:'#6b4a2f', thumb:generatedPreview('haircolor_brown'), image:generated('haircolor_brown')},
+  {id:'blonde', name:'金发', color:'#c9a25e', thumb:generatedPreview('haircolor_blonde'), image:generated('haircolor_blonde')},
+  {id:'pink', name:'粉发', color:'#d994ad', thumb:generatedPreview('haircolor_pink'), image:generated('haircolor_pink')},
+];
 export const EYE_SWATCHES  = ['#3E2723','#5a3a24','#7a4a2a','#3a6b5a','#2f5c8a','#6a3a6a','#8a6a2a','#455063'];
 
 const SKIN = {base:'#f6ddc7', shadow:'#e7b79a', deep:'#d99a7e', blush:'#f0a68f', hi:'#fff4e9'};

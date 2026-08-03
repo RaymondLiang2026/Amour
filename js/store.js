@@ -5,11 +5,14 @@ export function defaultConfig(){
   return {
     aiName: 'Yui',
     callName: '主人',
-    hairStyle: 'bob',
+    hairStyle: 'shoulder',
     hairColor: '#2D2926',
+    hairColorId: 'black',
     eyeColor: '#3E2723',
-    outfit: 'base',
+    outfit: 'basic',
     outfitColor: '#FDFDFD',
+    assetKind: 'outfit',
+    assetImage: 'assets/generated/outfit_basic.png?v=assets20260803',
     accessories: { glasses:false, hairpin:true, tie:false },
     // 场景
     theme: 'stage',
@@ -37,9 +40,15 @@ function normalizeSave(data){
   safe.aiName = safe.aiName === legacyName ? 'Yui' : (safe.aiName || 'Yui');
   safe.voiceGender = 'female';
   safe.wakeWord = !safe.wakeWord || safe.wakeWord === legacyName ? safe.aiName : safe.wakeWord;
-  const validOutfits = ['base','academy','coat','hoodie'];
-  safe.outfit = validOutfits.includes(safe.outfit) ? safe.outfit : 'base';
+  const validOutfits = ['basic','school','urban','casual','boxing','street1','street2','street3','street4','street5','street6','street7','street8','street9','street10'];
+  safe.outfit = validOutfits.includes(safe.outfit) ? safe.outfit : 'basic';
+  const validHair = ['longcurly','shoulder','ponytail','short'];
+  safe.hairStyle = validHair.includes(safe.hairStyle) ? safe.hairStyle : 'shoulder';
   safe.outfitColor = safe.outfitColor || '#FDFDFD';
+  if (!safe.assetImage || !String(safe.assetImage).includes('assets/generated/')) {
+    safe.assetKind = 'outfit';
+    safe.assetImage = 'assets/generated/outfit_basic.png?v=assets20260803';
+  }
   safe.accessories = Object.assign({ glasses:false, hairpin:true, tie:false }, safe.accessories || {});
   return safe;
 }
