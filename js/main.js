@@ -1,5 +1,5 @@
 // main.js — 启动与编排
-import { Scene3D } from './stage2d.js?v=r2d5-20260803g';
+import { Scene3D } from './stage2d.js?v=r2d5-20260803h';
 import * as Store from './store.js';
 import * as UI from './ui.js';
 import { RhythmGame } from './rhythm.js';
@@ -83,7 +83,12 @@ class App {
 
     this.scene = new Scene3D($('#stage-root'), this.cfg, {
       onCharacterClick: (part, meta) => this.onPartClick(part, meta),
-      onAutoTalk: (text, mood) => this.bubble(text, mood, { skipSceneReaction: true }),
+      onAutoTalk: (text, mood, opts) => this.bubble(text, mood, { skipSceneReaction: true, silentVoice: !!(opts && opts.silentVoice) }),
+      onEmotionVoice: (emotionKey) => {
+        // 尝试播放真人 MP3，返回该条 text（用于气泡同步）；若无则返回空
+        if (!this.voice) return '';
+        return this.voice.speakEmotion(emotionKey);
+      },
       onChange: () => this.save(),
       onFrame: () => UI.updateOverlays(this),
     });

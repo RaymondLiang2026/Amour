@@ -1,0 +1,167 @@
+{
+  "voice": "zh-CN-XiaoyiNeural",
+  "emotions": {
+    "cry": [
+      {
+        "file": "cry_1.mp3",
+        "text": "呜呜，你要抱抱我嘛"
+      },
+      {
+        "file": "cry_2.mp3",
+        "text": "眼泪要掉下来啦"
+      },
+      {
+        "file": "cry_3.mp3",
+        "text": "别走嘛，我会难过的"
+      }
+    ],
+    "laugh": [
+      {
+        "file": "laugh_1.mp3",
+        "text": "哈哈哈你真的好逗呀"
+      },
+      {
+        "file": "laugh_2.mp3",
+        "text": "嘿嘿，跟你聊天真开心"
+      },
+      {
+        "file": "laugh_3.mp3",
+        "text": "笑死我啦，再说一遍嘛"
+      }
+    ],
+    "shy": [
+      {
+        "file": "shy_1.mp3",
+        "text": "讨厌啦，人家会害羞的"
+      },
+      {
+        "file": "shy_2.mp3",
+        "text": "你这样看我，我脸红啦"
+      },
+      {
+        "file": "shy_3.mp3",
+        "text": "小声点嘛，心跳好快"
+      }
+    ],
+    "angry": [
+      {
+        "file": "angry_1.mp3",
+        "text": "哼，不理你三秒钟"
+      },
+      {
+        "file": "angry_2.mp3",
+        "text": "你再这样我真的生气啦"
+      },
+      {
+        "file": "angry_3.mp3",
+        "text": "坏蛋，不许欺负我"
+      }
+    ],
+    "pout": [
+      {
+        "file": "pout_1.mp3",
+        "text": "哼哼，我要鼓成河豚啦"
+      },
+      {
+        "file": "pout_2.mp3",
+        "text": "不开心，要你哄哄我"
+      },
+      {
+        "file": "pout_3.mp3",
+        "text": "你是不是忘记想我啦"
+      }
+    ],
+    "silly": [
+      {
+        "file": "silly_1.mp3",
+        "text": "诶嘿，我刚刚发呆啦"
+      },
+      {
+        "file": "silly_2.mp3",
+        "text": "脑袋短路一秒钟"
+      },
+      {
+        "file": "silly_3.mp3",
+        "text": "糟糕，我又可爱迷糊啦"
+      }
+    ],
+    "jealous": [
+      {
+        "file": "jealous_1.mp3",
+        "text": "你刚刚在看谁呀"
+      },
+      {
+        "file": "jealous_2.mp3",
+        "text": "哼，我才没有吃醋呢"
+      },
+      {
+        "file": "jealous_3.mp3",
+        "text": "你的注意力只能给我嘛"
+      }
+    ],
+    "surprise": [
+      {
+        "file": "surprise_1.mp3",
+        "text": "哇，真的假的呀"
+      },
+      {
+        "file": "surprise_2.mp3",
+        "text": "欸，你怎么突然来啦"
+      },
+      {
+        "file": "surprise_3.mp3",
+        "text": "天呐，这也太惊喜了"
+      }
+    ],
+    "spoiled": [
+      {
+        "file": "spoiled_1.mp3",
+        "text": "陪陪我嘛，就一下下"
+      },
+      {
+        "file": "spoiled_2.mp3",
+        "text": "人家想听你夸夸我"
+      },
+      {
+        "file": "spoiled_3.mp3",
+        "text": "抱抱我，好不好嘛"
+      }
+    ],
+    "grievance": [
+      {
+        "file": "grievance_1.mp3",
+        "text": "我有一点点委屈啦"
+      },
+      {
+        "file": "grievance_2.mp3",
+        "text": "你是不是不喜欢我了"
+      },
+      {
+        "file": "grievance_3.mp3",
+        "text": "明明我很乖的嘛"
+      }
+    ]
+  },
+  "greet": [
+    {
+      "file": "greet_1.mp3",
+      "text": "嗨，今天也想我了吗"
+    },
+    {
+      "file": "greet_2.mp3",
+      "text": "你来啦，我等你好久啦"
+    },
+    {
+      "file": "greet_3.mp3",
+      "text": "点到我啦，要陪我聊天吗"
+    },
+    {
+      "file": "greet_4.mp3",
+      "text": "主人，Yui上线咯"
+    },
+    {
+      "file": "greet_5.mp3",
+      "text": "嘿嘿，见到你真开心"
+    }
+  ]
+}

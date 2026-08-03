@@ -2,7 +2,7 @@
 // 单一渲染出口：写实场景背景 + 写实人物六视角 180° 旋转 + 缩放 + 景深视差。
 // 纯 DOM/CSS，无 Three.js、无 shader 抠图、无低模道具，彻底避免多来源渲染打架。
 
-const V = 'r2d5-20260803g';
+const V = 'r2d5-20260803h';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -373,22 +373,45 @@ export class Scene3D {
     }
   }
 
-  _showSticker(sticker, cls) {
+  _showSticker(sticker, cls, emotionKey) {
     if (!this.actor || !sticker) return;
     const el = document.createElement('div');
     el.className = `s2-sticker${cls ? ` ${cls}` : ''}`;
-    el.textContent = sticker;
+
+    // 如果有表情脸图，尝试加载 PNG 作为贴纸（加载失败回退 emoji）
+    if (emotionKey) {
+      const imgUrl = `assets/realistic/character/emotions/${emotionKey}.png?v=${V}`;
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.alt = emotionKey;
+      img.style.cssText = 'width:72px;height:72px;object-fit:contain;display:block;';
+      img.onload = () => {
+        el.textContent = '';
+        el.appendChild(img);
+      };
+      img.onerror = () => {
+        // 加载失败，保持 emoji 文本
+        el.textContent = sticker;
+      };
+      // 先设置 emoji 作为即时展示（图片加载后替换）
+      el.textContent = sticker;
+    } else {
+      el.textContent = sticker;
+    }
+
     this.actor.appendChild(el);
     setTimeout(() => el.remove(), 1400);
   }
 
   // 表情反馈：贴纸 + 动作 + 粒子 + （可选）一句台词 → 外部气泡/语音
+  // 集成真人语音：播 MP3 时气泡文字使用 manifest 中该条 text
   playEmotion(name, opts = {}) {
     const key = (name || '').toLowerCase();
     const entry = EMOTIONS[key] || EMOTIONS[pick(EMOTION_KEYS)];
     if (!entry) return;
 
-    this._showSticker(entry.sticker, entry.stickerClass);
+    // 贴纸：传入 key 以加载对应表情脸图 PNG
+    this._showSticker(entry.sticker, entry.stickerClass, key);
 
     const action = pick(entry.actions || ACTIONS);
     this.playAction(action);
@@ -399,8 +422,16 @@ export class Scene3D {
 
     const emitLine = opts.emitLine !== false;
     if (emitLine) {
-      const line = pick(entry.lines || []);
-      if (line) this.cbs.onAutoTalk?.(line, key || action);
+      // 尝试播放真人 MP3（通过 cbs.onEmotionVoice 回调）
+      const voiceText = this.cbs.onEmotionVoice?.(key);
+      if (voiceText) {
+        // MP3 播放成功，气泡用 manifest 中的 text，不再触发 TTS
+        this.cbs.onAutoTalk?.(voiceText, key || action, { silentVoice: true });
+      } else {
+        // 无 MP3 或 voiceOutput 关闭 → 使用原有 lines 回退（允许 TTS）
+        const line = pick(entry.lines || []);
+        if (line) this.cbs.onAutoTalk?.(line, key || action);
+      }
     }
   }
 
