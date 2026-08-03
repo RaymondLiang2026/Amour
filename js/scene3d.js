@@ -7,6 +7,19 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 // 环形角度归一化到 [-180, 180]
 const normAngle = (a) => { a = ((a + 180) % 360 + 360) % 360 - 180; return a; };
+// 颜色线性插值：返回新 THREE.Color
+const lerpColor = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t);
+
+// —— 竖直渐变贴图（用于窗外景深 / 天光） —— //
+function makeGradientTexture(top = '#3a4a7a', bottom = '#c9a2d4') {
+  const c = document.createElement('canvas'); c.width = 8; c.height = 256;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, top); g.addColorStop(1, bottom);
+  x.fillStyle = g; x.fillRect(0, 0, 8, 256);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
 
 // —— 360° 全圆周视角 stops（环形；back 与 back2 复用同一张背面贴图，覆盖 -180/+180 边界）——
 const VIEW_DEFS = [
@@ -69,6 +82,13 @@ export class Scene3D {
     this.walkEnabled = (cfg.walkEnabled !== false); // 默认开启
     this.walkDir = 1;            // 边界反向
     this.prevWalkX = 0;          // 上一帧 x（估算走动速度）
+    // —— 角色 Plane 贴地：集中管理 characterY 基准偏移 ——
+    // Plane 中心在 group 内 y=-0.15，planeH=5.4；characterY 基准取 -0.05，
+    // 则脚部 ≈ -0.05 - 0.15 - 2.7 = -2.9，贴合地板顶面（地板中心 y=-3、顶面 y=-2.8）。
+    this.characterY = -0.05;
+    // —— 3D 场景纵深：主题灯光 / 自发光材质引用（供昼夜插值） ——
+    this.themeLights = [];      // [{light, night, day}]
+    this.themeEmissives = [];   // [{mat|sprite, night, day}]
     this._initRenderer(); this._initScene(); this._initEnvAndLights();
     this._initCharacter();
     this._grabBgLayers();
@@ -90,15 +110,21 @@ export class Scene3D {
 
   _initScene() {
     this.scene = new THREE.Scene();
-    // 正交式取景：透视相机，人物 Plane 位于 z=0
-    this.camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 60);
+    // —— 多层 fog 简化景深（DoF 回退方案，避免引入 postprocessing 依赖） ——
+    // 角色 Plane 用 ShaderMaterial（不受 fog 影响）→ 主体清晰；地板/墙面/背景板受 fog 逐渐隐入 → 纵深感。
+    this.scene.fog = new THREE.Fog(0x1a1420, 6, 28);
+    // 正交式取景：透视相机，人物 Plane 位于 z=0；fov 收窄到 38 突出景深
+    this.camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 80);
     this.camTarget = new THREE.Vector3(0, 0, 0);
-    this.camBase = new THREE.Vector3(0, 0, 7.6);
+    this.camBase = new THREE.Vector3(0, 0, 10.0);   // 拉远看到更多场景纵深
     this.camTargetZ = this.camBase.z;   // 镜头缩放目标 z（zoomBy 控制）
     this.camera.position.copy(this.camBase);
     this.camera.lookAt(this.camTarget);
+    // —— 3D 场景环境容器（地板/墙/道具结构等，按主题重建） ——
+    this.envGroup = new THREE.Group();
+    this.scene.add(this.envGroup);
     this.propsGroup = new THREE.Group();
-    this.propsGroup.position.y = -2.4;
+    this.propsGroup.position.y = -2.8;   // 道具坐落于地板顶面
     this.scene.add(this.propsGroup);
     this.raycaster = new THREE.Raycaster(); this.pointer = new THREE.Vector2();
   }
@@ -220,12 +246,24 @@ export class Scene3D {
     this.bgWarm = document.getElementById('bg-warm');
     this.bgNight = document.getElementById('bg-night');
     this.bgGlow = document.getElementById('bg-glow');
+    // —— 第五轮：3D 场景成为唯一背景，隐藏原 2D 背景照片层（DOM 保留，避免破坏其他代码） ——
+    if (this.bgWarm) { this.bgWarm.style.opacity = '0'; this.bgWarm.style.display = 'none'; }
+    if (this.bgNight) { this.bgNight.style.opacity = '0'; this.bgNight.style.display = 'none'; }
   }
 
   /* ---------- 外部接口 ---------- */
   applyTheme(theme) {
     this.cfg.theme = theme;
     document.body.dataset.sceneTheme = theme;
+    // —— 重建 3D 场景环境（地板/墙/道具结构/灯光） ——
+    this.envGroup.clear();
+    this.themeLights = [];
+    this.themeEmissives = [];
+    const env = buildSceneTheme(theme);
+    this.themeLights = env.userData.lights || [];
+    this.themeEmissives = env.userData.emissives || [];
+    this.envGroup.add(env);
+    // 主题决定默认昼夜基调，随后 setDayNight 应用到 3D 灯光
     if (theme === 'bedroom') this.setDayNight(Math.min(this.cfg.daynight, 24));
     else if (theme === 'cafe') this.setDayNight(Math.max(this.cfg.daynight, 60));
     else this.setDayNight(this.cfg.daynight);
@@ -243,10 +281,25 @@ export class Scene3D {
     }
   }
   setDayNight(v) {
-    this.cfg.daynight = v; const t = clamp(v / 100, 0, 1);
-    if (this.bgWarm && this.bgNight) { this.bgWarm.style.opacity = t.toFixed(3); this.bgNight.style.opacity = (1 - t).toFixed(3); }
-    this.hemi.intensity = 0.5 + t * 0.35;
-    this.key.intensity = 1.3 + t * 0.9;
+    this.cfg.daynight = v; const t = clamp(v / 100, 0, 1);   // t=0 夜晚 → t=1 白天
+    // —— 全局环境光 / 主光：夜暗昼亮 ——
+    this.hemi.color.copy(lerpColor(0x1a2040, 0xdcedff, t));      // sky
+    this.hemi.groundColor.copy(lerpColor(0x0a0812, 0x8a7f66, t)); // ground
+    this.hemi.intensity = lerp(0.55, 0.95, t);
+    this.key.intensity = lerp(0.7, 2.0, t);
+    // —— fog 颜色 + 渲染背景色随昼夜过渡（无缝景深底色） ——
+    const fogCol = lerpColor(0x0a0812, 0xc8d4e0, t);
+    if (this.scene.fog) this.scene.fog.color.copy(fogCol);
+    this.renderer.setClearColor(fogCol, 1);
+    // —— 主题灯光（舞台/吊灯 spotlight）强度插值 ——
+    this.themeLights.forEach(o => { o.light.intensity = lerp(o.night, o.day, t); });
+    // —— 自发光材质（窗户/灯罩/glow）：夜高昼低 ——
+    this.themeEmissives.forEach(o => {
+      const val = lerp(o.night, o.day, t);
+      if (o.mat) o.mat.emissiveIntensity = val;
+      if (o.sprite) o.sprite.material.opacity = val;
+    });
+    // 角色 rim / glow：夜晚更强
     if (this.rim) this.rim.material.opacity = 0.45 + (1 - t) * 0.35;
     if (this.glow) this.glow.material.opacity = 0.4 + (1 - t) * 0.35;
     this.renderer.toneMappingExposure = 0.92 + t * 0.28;
@@ -328,7 +381,7 @@ export class Scene3D {
       if (this.dragProp) {
         norm(e);
         this.raycaster.setFromCamera(this.pointer, this.camera);
-        const p = new THREE.Vector3(); const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 2.4);
+        const p = new THREE.Vector3(); const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 2.8);
         if (this.raycaster.ray.intersectPlane(plane, p)) { this.dragProp.position.x = clamp(p.x, -3, 3); this.dragProp.position.z = clamp(p.z, -1, 3); }
         e.preventDefault && e.preventDefault();
         return;
@@ -437,7 +490,7 @@ export class Scene3D {
       // 呼吸: Y 位移 + 缩放（叠加走动脚步颠簸）
       const breath = Math.sin(t * Math.PI * 2 / 4);
       const sway = Math.sin(t * 0.5);
-      this.character.position.y = -0.02 + breath * 0.018 + (this._stepBob || 0);
+      this.character.position.y = this.characterY + breath * 0.018 + (this._stepBob || 0);
       this.character.scale.y = 1 + breath * 0.005;
       this.character.scale.x = 1 - breath * 0.002;
       // 头部/身体轻旋转：拖拽俯仰 userPitch 主导（低头/抬头）+ 鼠标 Y 微视差
@@ -488,6 +541,111 @@ export class Scene3D {
 
     this.renderer.render(this.scene, this.camera); this.cb.onFrame && this.cb.onFrame();
   }
+}
+
+/* ---------- 3D 场景主题（地板 + 墙 + 结构 + 灯光，构成真实纵深空间） ---------- */
+// 返回一个 Group，group.userData = { lights:[{light,night,day}], emissives:[{mat|sprite,night,day}] }
+// 供 setDayNight 按昼夜插值。所有几何体低多边形（12-24 分段）+ 柔和暖色材质。
+function buildSceneTheme(theme) {
+  const g = new THREE.Group();
+  const lights = [], emissives = [];
+  g.userData = { lights, emissives };
+  const FLOOR_TOP = -2.8;   // 地板顶面（地板中心 y=-3、高 0.3~0.4）
+
+  // 顶部灯罩 + 暖色 glow sprite（bloom 感）helper
+  const addLampGlow = (x, y, z, scale, night, day) => {
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: makeGlowTexture('rgba(255,240,210,.7)', 'rgba(255,220,170,.32)'),
+      color: 0xffd9a0, transparent: true, opacity: night, depthWrite: false,
+      blending: THREE.AdditiveBlending, fog: false,
+    }));
+    glow.position.set(x, y, z); glow.scale.set(scale, scale, 1); g.add(glow);
+    emissives.push({ sprite: glow, night, day });
+  };
+
+  if (theme === 'cafe') {
+    // 地板 木纹色
+    g.add(mesh(new THREE.BoxGeometry(20, 0.3, 15), std(0x8b5a3c, 0.7), 0, -3, 0));
+    // 后墙 米黄
+    g.add(mesh(new THREE.BoxGeometry(20, 6, 0.2), std(0xd4b995, 0.9), 0, 0, -6));
+    // 窗外景深（蓝紫渐变）
+    g.add(mesh(new THREE.PlaneGeometry(30, 8), new THREE.MeshBasicMaterial({ map: makeGradientTexture('#4a5aa0', '#c9a2d4'), side: THREE.DoubleSide }), 0, 1, -6.1));
+    // 3 个窗户（亮光暖白 emissive）
+    for (const wx of [-6, 0, 6]) {
+      const winMat = new THREE.MeshStandardMaterial({ color: 0xfff2d6, emissive: 0xffe6b0, emissiveIntensity: 0.9, roughness: 0.4 });
+      g.add(mesh(new THREE.BoxGeometry(2.9, 3.4, 0.08), std(0x6b4a30, 0.7), wx, 0.5, -5.92)); // 窗框
+      const win = mesh(new THREE.PlaneGeometry(2.5, 3), winMat, wx, 0.5, -5.85); g.add(win);
+      emissives.push({ mat: winMat, night: 1.8, day: 0.35 });
+      addLampGlow(wx, 0.5, -5.7, 2.6, 0.5, 0.12);
+    }
+    // 桌椅 4 组
+    const tableTop = std(0x9b7657, 0.6), tableLeg = std(0x4a3a30, 0.7), chair = std(0x7a5a42, 0.75);
+    for (const [tx, tz] of [[-5, 1.5], [0, 3], [5, 1.5], [-2, 4.5]]) {
+      const s = new THREE.Group();
+      s.add(mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 18), tableTop, 0, 0.75, 0));   // 圆桌面
+      s.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.75, 8), tableLeg, 0, 0.375, 0)); // 桌腿
+      for (const [cx, cz] of [[-0.75, 0.1], [0.75, 0.1]]) s.add(mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), chair, cx, 0.25, cz)); // 2 椅
+      s.position.set(tx, FLOOR_TOP, tz); g.add(s);
+    }
+    // 3 个吊灯（SpotLight + 锥形灯罩，从 y=+3 向下照）
+    for (const lx of [-5, 0, 5]) {
+      const spot = new THREE.SpotLight(0xffdca0, 1.6, 14, Math.PI / 6, 0.5, 1.1);
+      spot.position.set(lx, 3, 1.5); spot.target.position.set(lx, FLOOR_TOP, 1.5);
+      g.add(spot); g.add(spot.target); lights.push({ light: spot, night: 1.3, day: 1.7 });
+      g.add(mesh(new THREE.ConeGeometry(0.3, 0.3, 12), new THREE.MeshStandardMaterial({ color: 0xcaa06a, emissive: 0xffcc88, emissiveIntensity: 0.5, side: THREE.DoubleSide }), lx, 3, 1.5));
+      addLampGlow(lx, 2.8, 1.5, 1.3, 0.55, 0.3);
+    }
+  }
+  else if (theme === 'bedroom') {
+    // 地板 浅木
+    g.add(mesh(new THREE.BoxGeometry(15, 0.3, 10), std(0xc9a476, 0.7), 0, -3, 0));
+    // 侧墙 x=±7 米色
+    for (const sx of [-7, 7]) g.add(mesh(new THREE.BoxGeometry(0.2, 5, 10), std(0xe8ddc8, 0.9), sx, -0.5, 0));
+    // 后墙 米粉
+    g.add(mesh(new THREE.BoxGeometry(15, 5, 0.2), std(0xebd8c9, 0.9), 0, -0.5, -5));
+    // 床（左侧）+ 棉被 + 枕头
+    g.add(mesh(new THREE.BoxGeometry(3, 0.7, 2), std(0xf5f0e8, 0.85), -4, FLOOR_TOP + 0.35, -2));
+    g.add(mesh(new THREE.BoxGeometry(2.8, 0.15, 0.6), std(0xffffff, 0.8), -4, FLOOR_TOP + 0.78, -2.6)); // 枕头
+    // 书桌（右侧）+ 桌腿
+    g.add(mesh(new THREE.BoxGeometry(1.5, 0.05, 0.8), std(0x9b7657, 0.6), 4, FLOOR_TOP + 0.75, -2));
+    for (const [dx, dz] of [[3.35, -1.7], [4.65, -1.7], [3.35, -2.3], [4.65, -2.3]]) g.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.75, 8), std(0x6b4a30, 0.7), dx, FLOOR_TOP + 0.375, dz));
+    // 窗户（天光 emissive）
+    const winMat = new THREE.MeshStandardMaterial({ color: 0xeef4ff, emissive: 0xbfd6ff, emissiveIntensity: 0.8, roughness: 0.4 });
+    g.add(mesh(new THREE.BoxGeometry(2.3, 2.8, 0.08), std(0xd8c8b4, 0.7), 0, 0.2, -4.94)); // 窗框
+    g.add(mesh(new THREE.PlaneGeometry(2, 2.5), winMat, 0, 0.2, -4.9));
+    emissives.push({ mat: winMat, night: 1.2, day: 0.3 });
+    addLampGlow(0, 0.2, -4.7, 2.2, 0.4, 0.1);
+    // 台灯（书桌上：小 Cylinder + PointLight 暖色）
+    g.add(mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.5, 10), std(0x6b4a30, 0.6), 4.4, FLOOR_TOP + 1.05, -2.2));
+    g.add(mesh(new THREE.ConeGeometry(0.18, 0.22, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xffe0b0, emissive: 0xffcc88, emissiveIntensity: 0.6, side: THREE.DoubleSide }), 4.4, FLOOR_TOP + 1.35, -2.2));
+    const lamp = new THREE.PointLight(0xffd19a, 1.6, 5); lamp.position.set(4.4, FLOOR_TOP + 1.3, -2.2); g.add(lamp);
+    lights.push({ light: lamp, night: 1.8, day: 0.8 });
+    addLampGlow(4.4, FLOOR_TOP + 1.32, -2.05, 1.0, 0.6, 0.25);
+  }
+  else {
+    // —— 舞台场景（stage，默认） ——
+    // 舞台地板：深色木质 + 轻微金属反射（简化 mirror）
+    g.add(mesh(new THREE.BoxGeometry(20, 0.4, 15), new THREE.MeshStandardMaterial({ color: 0x2b1810, roughness: 0.6, metalness: 0.15 }), 0, -3, 0));
+    // 舞台后墙 深棕
+    g.add(mesh(new THREE.BoxGeometry(20, 8, 0.3), std(0x3a2416, 0.85), 0, 1, -8));
+    // 侧幕布（暗红）
+    for (const sx of [-7, 7]) g.add(mesh(new THREE.PlaneGeometry(3, 8), new THREE.MeshBasicMaterial({ color: 0x5a1622, transparent: true, opacity: 0.92, side: THREE.DoubleSide }), sx, 1, -6));
+    // 远景纱幔（半透明暗紫）
+    g.add(mesh(new THREE.PlaneGeometry(30, 12), new THREE.MeshBasicMaterial({ color: 0x2a1d3a, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false }), 0, 2, -12));
+    // 顶部灯光阵列：4 个 SpotLight（暖白）+ 圆柱灯罩，从上方照下
+    for (const lx of [-6, -2, 2, 6]) {
+      const spot = new THREE.SpotLight(0xffe6c0, 2.2, 24, Math.PI / 7, 0.4, 1.1);
+      spot.position.set(lx, 6.5, 2); spot.target.position.set(lx * 0.5, FLOOR_TOP, -1);
+      g.add(spot); g.add(spot.target); lights.push({ light: spot, night: 1.6, day: 2.4 });
+      g.add(mesh(new THREE.CylinderGeometry(0.3, 0.22, 0.5, 14), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.6 }), lx, 6.6, 2));
+      addLampGlow(lx, 6.25, 2.15, 1.7, 0.6, 0.28);
+    }
+  }
+  return g;
+
+  // 局部 helper
+  function mesh(geo, mat, x, y, z) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); return m; }
+  function std(color, roughness) { return new THREE.MeshStandardMaterial({ color, roughness }); }
 }
 
 /* ---------- 道具（原样保留） ---------- */

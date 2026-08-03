@@ -34,7 +34,7 @@ class App{
     const saved=Store.load();
     const params=new URLSearchParams(location.search);
     if(saved){ this.cfg=saved; this.enterStage(); }
-    else if(params.has('autostage')){ this.cfg=Store.defaultConfig(); this.cfg.createdAt=Date.now(); this.enterStage(); }
+    else if(params.has('autostage')){ this.cfg=Store.defaultConfig(); this.cfg.createdAt=Date.now(); const th=params.get('theme'); if(['stage','cafe','bedroom'].includes(th)) this.cfg.theme=th; const dn=params.get('daynight'); if(dn!==null && !isNaN(+dn)) this.cfg.daynight=+dn; this.enterStage(); }
     else { this.showCreation(); }
     $('#loading').classList.add('hidden');
   }
