@@ -76,3 +76,17 @@ body[data-scene-theme="cafe"] #bg-stage{
 body[data-scene-theme="bedroom"] #bg-stage{
   background:linear-gradient(145deg,#f9f7ff,#eef5fb 48%,#fff0f6);
 }
+
+/* 同源视觉改造：主场景背景与左侧场景缩略图使用同源高质量图片 */
+#bg-stage{
+  background-image:linear-gradient(135deg,rgba(255,255,255,.08),rgba(232,244,252,.12)),var(--scene-bg-image, url('../assets/bg/generated/stage_living.png')) !important;
+  background-size:cover !important;
+  background-position:center !important;
+}
+#bg-stage::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.03),rgba(235,244,252,.16) 66%,rgba(20,24,32,.18));
+  pointer-events:none;
+}

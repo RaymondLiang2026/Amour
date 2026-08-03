@@ -34,6 +34,11 @@ const VIEW_DEFS = [
   { name: 'back2', angle: +180, url: 'assets/character/facecut/back.png' },  // 复用 back
 ];
 const BLINK_URL = 'assets/character/facecut/blink.png';
+const SCENE_BACKGROUNDS = {
+  stage: 'assets/bg/generated/stage_living.png',
+  cafe: 'assets/bg/generated/cafe.png',
+  bedroom: 'assets/bg/generated/bedroom.png',
+};
 const OUTFIT_STAGE_TEXTURES = {
   base: 'assets/character/stage_variants/outfit_base.png',
   academy: 'assets/character/stage_variants/outfit_academy.png',
@@ -81,6 +86,12 @@ export class Scene3D {
     this.currentViewAngle = 0; // 平滑角度（环形 [-180,180]）
     this.blinkTimer = 2.6 + Math.random() * 2.4; this.blinkPhase = 0; // s / 0..1
     this.talkPulse = 0;
+    this.useGLBCharacter = false;
+    this.characterVisual = null;
+    this.characterAnchorY = -2.75;
+    this.characterHeight = 5.4;
+    this.characterHeadLocal = new THREE.Vector3(0, 2.3, 0);
+    this.characterClickTarget = null;
     // —— 用户交互角度（拖拽/触控主导视角；hover 仅提供 ±20° 微视差）——
     this.userYaw = 0;            // 用户拖拽累计偏航角（环形）
     this.userPitch = 0;          // 用户拖拽俯仰角（clamp ±30）
@@ -148,21 +159,26 @@ export class Scene3D {
     this.fill = new THREE.DirectionalLight(0xbcd4ff, 0.5); this.fill.position.set(2.8, 1.6, 2.2); this.scene.add(this.fill);
 
     // rim light 硬光晕（Plane 后方，2 层）
-    const rimMat = new THREE.SpriteMaterial({ map: makeRimTexture(), color: 0xffe9cf, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
+    const rimMat = new THREE.SpriteMaterial({ map: makeRimTexture(), color: 0xffe9cf, transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending });
     this.rim = new THREE.Sprite(rimMat); this.rim.position.set(0, -0.15, -0.9); this.rim.scale.set(4.8, 6.8, 1); this.scene.add(this.rim);
 
     // 柔光晕
-    const glowMat = new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xffe9cf, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
+    const glowMat = new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xffe9cf, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending });
     this.glow = new THREE.Sprite(glowMat); this.glow.position.set(0, -0.05, -0.55); this.glow.scale.set(4.4, 5.6, 1); this.scene.add(this.glow);
   }
 
   _initCharacter() {
     this.character = new THREE.Group(); this.scene.add(this.character);
-    // 两层 Plane 做 crossfade，各自 8 张贴图切换
-    const loader = new THREE.TextureLoader();
-    this.textureLoader = loader;
+    this.character.rotation.order = 'YXZ';
+    this.textureLoader = new THREE.TextureLoader();
     this.textures = {};
     this.variantTextures = {};
+    this._initPlaneCharacter();
+  }
+
+  _initPlaneCharacter() {
+    // 两层 Plane 做 crossfade，各自 8 张贴图切换
+    const loader = this.textureLoader;
     const promises = VIEW_DEFS.map(v => new Promise(res => {
       loader.load(v.url, tex => {
         tex.colorSpace = THREE.SRGBColorSpace;
@@ -257,6 +273,8 @@ export class Scene3D {
     this.planeHair.position.set(0, -0.15, 0.008);
     this.planeBlink.position.set(0, -0.15, 0.012);
     this.character.add(this.planeMain); this.character.add(this.planeOutfit); this.character.add(this.planeHair); this.character.add(this.planeBlink);
+    this.characterVisual = this.planeMain;
+    this.characterClickTarget = this.planeMain;
     this._syncVariantPlanes();
 
     this.modelReady = true;
@@ -276,14 +294,12 @@ export class Scene3D {
   applyTheme(theme) {
     this.cfg.theme = theme;
     document.body.dataset.sceneTheme = theme;
-    // —— 重建 3D 场景环境（地板/墙/道具结构/灯光） ——
+    const bg = SCENE_BACKGROUNDS[theme] || SCENE_BACKGROUNDS.stage;
+    document.documentElement.style.setProperty('--scene-bg-image', `url("${bg}")`);
+    // 同源视觉模式：背景由高质量图片承载，避免简陋几何体与缩略图不一致
     this.envGroup.clear();
     this.themeLights = [];
     this.themeEmissives = [];
-    const env = buildSceneTheme(theme);
-    this.themeLights = env.userData.lights || [];
-    this.themeEmissives = env.userData.emissives || [];
-    this.envGroup.add(env);
     // 主题决定默认昼夜基调，随后 setDayNight 应用到 3D 灯光
     if (theme === 'bedroom') this.setDayNight(Math.min(this.cfg.daynight, 24));
     else if (theme === 'cafe') this.setDayNight(Math.max(this.cfg.daynight, 60));
@@ -311,7 +327,7 @@ export class Scene3D {
     // —— fog 颜色 + 渲染背景色随昼夜过渡（无缝景深底色） ——
     const fogCol = lerpColor(0x0a0812, 0xc8d4e0, t);
     if (this.scene.fog) this.scene.fog.color.copy(fogCol);
-    this.renderer.setClearColor(fogCol, 1);
+    this.renderer.setClearColor(fogCol, 0);
     // —— 主题灯光（舞台/吊灯 spotlight）强度插值 ——
     this.themeLights.forEach(o => { o.light.intensity = lerp(o.night, o.day, t); });
     // —— 自发光材质（窗户/灯罩/glow）：夜高昼低 ——
@@ -321,8 +337,8 @@ export class Scene3D {
       if (o.sprite) o.sprite.material.opacity = val;
     });
     // 角色 rim / glow：夜晚更强
-    if (this.rim) this.rim.material.opacity = 0.45 + (1 - t) * 0.35;
-    if (this.glow) this.glow.material.opacity = 0.4 + (1 - t) * 0.35;
+    if (this.rim) this.rim.material.opacity = 0.08 + (1 - t) * 0.08;
+    if (this.glow) this.glow.material.opacity = 0.12 + (1 - t) * 0.08;
     this.renderer.toneMappingExposure = 0.92 + t * 0.28;
   }
   _getVariantTexture(key, url) {
@@ -346,10 +362,11 @@ export class Scene3D {
     const outfit = this.cfg.outfit || 'base';
     const hair = this.cfg.hairStyle || 'bob';
     this._syncVariantPlane(this.planeOutfit, `outfit:${outfit}`, OUTFIT_STAGE_TEXTURES[outfit] || OUTFIT_STAGE_TEXTURES.base, outfit !== 'base', this.cfg.outfitColor || 0xffffff);
-    this._syncVariantPlane(this.planeHair, `hair:${hair}`, HAIR_STAGE_TEXTURES[hair] || HAIR_STAGE_TEXTURES.bob, hair !== 'bob', this.cfg.hairColor || 0xffffff);
+    this._syncVariantPlane(this.planeHair, `hair:${hair}`, HAIR_STAGE_TEXTURES[hair] || HAIR_STAGE_TEXTURES.bob, true, this.cfg.hairColor || 0xffffff);
   }
   redrawCharacter() {
     this.applyLight(this.cfg.light);
+    if (this.characterVisual && this.characterVisual !== this.planeMain) return;
     this._syncVariantPlanes();
     if (this.mainMat?.uniforms) {
       const outfitBoost = this.cfg.outfit === 'coat' ? 0.1 : this.cfg.outfit === 'academy' ? 0.05 : this.cfg.outfit === 'hoodie' ? -0.02 : 0;
@@ -398,9 +415,13 @@ export class Scene3D {
       if (ph.length) { this.dragProp = ph[0].object.userData.root; el.setPointerCapture?.(e.pointerId); return; }
       // 记录角色点击部位（轻点触发 onCharacterClick，拖动则视为转视角）
       this._downPart = null;
-      if (this.planeMain) {
-        const ch = this.raycaster.intersectObject(this.planeMain, true);
-        if (ch.length) { const y = ch[0].point.y; this._downPart = (y > 1.3) ? 'face' : (y > 0.0 ? 'neck' : 'body'); }
+      const characterTarget = this.characterClickTarget || this.planeMain;
+      if (characterTarget) {
+        const ch = this.raycaster.intersectObject(characterTarget, true);
+        if (ch.length) {
+          const y = ch[0].point.y;
+          this._downPart = (y > 1.3) ? 'face' : (y > 0.0 ? 'neck' : 'body');
+        }
       }
       // 进入视角拖拽
       this.dragging = true;
@@ -467,8 +488,9 @@ export class Scene3D {
   _resize() { this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.renderer.setSize(innerWidth, innerHeight); }
 
   headScreen() {
-    // 头部在 Plane 上部；直接 project，character.rotation.x（低头/抬头）会自动应用到屏幕坐标
-    const p = new THREE.Vector3(0, 2.5, 0.01);
+    const p = (this.characterVisual && this.characterVisual !== this.planeMain)
+      ? this.character.localToWorld(this.characterHeadLocal.clone())
+      : new THREE.Vector3(0, 2.5, 0.01);
     const v = p.clone().project(this.camera);
     return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight, visible: v.z < 1 };
   }
@@ -517,21 +539,6 @@ export class Scene3D {
         this._stepBob = 0;
       }
 
-      // 目标视角角度: 拖拽 userYaw 主导 + hover 微视差 ±20° + 走动看向（叠加）
-      const targetAngle = this.userYaw + this.aim.x * 20 + (this._walkLook || 0);
-      // 环形 lerp：沿最短路径插值，跨越 ±180 边界不抖动
-      const shortestDelta = normAngle(targetAngle - this.currentViewAngle);
-      this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.35);
-      const { a, b, t: mix } = this._pickViews(this.currentViewAngle);
-
-      // 更新 ShaderMaterial 双纹理与 mix
-      const u = this.mainMat.uniforms;
-      if (u.uTexA.value !== this.textures[a.name]) u.uTexA.value = this.textures[a.name];
-      if (u.uTexB.value !== this.textures[b.name]) u.uTexB.value = this.textures[b.name];
-      // 关键: 用陡峭 smoothstep(0.4, 0.6) 让中间双图混合极窄, 端点快速锁死
-      const m = clamp((mix - 0.4) / 0.2, 0, 1);
-      u.uMix.value = m * m * (3 - 2 * m);
-
       // 呼吸: Y 位移 + 缩放（叠加走动脚步颠簸）
       const breath = Math.sin(t * Math.PI * 2 / 4);
       const sway = Math.sin(t * 0.5);
@@ -542,18 +549,42 @@ export class Scene3D {
       this.character.rotation.x = -clamp(this.userPitch, -30, 30) * Math.PI / 180 - this.aim.y * 0.05 + sway * 0.008;
       // 水平位移：鼠标视差 + 场景内走动（叠加，不覆盖）
       this.character.position.x = this.aim.x * 0.05 + (this._walkX || 0);
-      // Plane 微倾斜制造立体感 (Y 轴旋转 - 与视角切换协同)
-      this.character.rotation.y = -this.aim.x * 0.04;
 
-      // 眨眼: 定时触发，眨眼期间 planeBlink 在正面附近 fade 到覆盖 planeA
-      this.blinkTimer -= dt;
-      if (this.blinkTimer <= 0) {
-        this.blinkPhase += dt * 12; // 一次眨眼 ~π/12 秒 ≈ 0.26s
-        const b01 = Math.max(0, Math.sin(Math.min(this.blinkPhase, Math.PI))); // 0..1..0
-        // 仅在接近正面 |angle|<25° 生效
-        const gate = clamp(1 - Math.abs(this.currentViewAngle) / 25, 0, 1);
-        this.planeBlink.material.opacity = b01 * gate;
-        if (this.blinkPhase >= Math.PI) { this.blinkPhase = 0; this.blinkTimer = 2.6 + Math.random() * 2.4; this.planeBlink.material.opacity = 0; }
+      const isGLB = !!(this.characterVisual && this.characterVisual !== this.planeMain);
+      if (isGLB) {
+        const targetAngle = this.userYaw + this.aim.x * 12 + (this._walkLook || 0);
+        const shortestDelta = normAngle(targetAngle - this.currentViewAngle);
+        this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.22);
+        this.character.rotation.y = THREE.MathUtils.degToRad(this.currentViewAngle);
+      } else {
+        // 目标视角角度: 拖拽 userYaw 主导 + hover 微视差 ±20° + 走动看向（叠加）
+        const targetAngle = this.userYaw + this.aim.x * 20 + (this._walkLook || 0);
+        // 环形 lerp：沿最短路径插值，跨越 ±180 边界不抖动
+        const shortestDelta = normAngle(targetAngle - this.currentViewAngle);
+        this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.35);
+        const { a, b, t: mix } = this._pickViews(this.currentViewAngle);
+
+        // 更新 ShaderMaterial 双纹理与 mix
+        const u = this.mainMat.uniforms;
+        if (u.uTexA.value !== this.textures[a.name]) u.uTexA.value = this.textures[a.name];
+        if (u.uTexB.value !== this.textures[b.name]) u.uTexB.value = this.textures[b.name];
+        // 关键: 用陡峭 smoothstep(0.4, 0.6) 让中间双图混合极窄, 端点快速锁死
+        const m = clamp((mix - 0.4) / 0.2, 0, 1);
+        u.uMix.value = m * m * (3 - 2 * m);
+
+        // Plane 微倾斜制造立体感 (Y 轴旋转 - 与视角切换协同)
+        this.character.rotation.y = -this.aim.x * 0.04;
+
+        // 眨眼: 定时触发，眨眼期间 planeBlink 在正面附近 fade 到覆盖 planeA
+        this.blinkTimer -= dt;
+        if (this.blinkTimer <= 0) {
+          this.blinkPhase += dt * 12; // 一次眨眼 ~π/12 秒 ≈ 0.26s
+          const b01 = Math.max(0, Math.sin(Math.min(this.blinkPhase, Math.PI))); // 0..1..0
+          // 仅在接近正面 |angle|<25° 生效
+          const gate = clamp(1 - Math.abs(this.currentViewAngle) / 25, 0, 1);
+          this.planeBlink.material.opacity = b01 * gate;
+          if (this.blinkPhase >= Math.PI) { this.blinkPhase = 0; this.blinkTimer = 2.6 + Math.random() * 2.4; this.planeBlink.material.opacity = 0; }
+        }
       }
 
       // 说话口型 pulse (脉动缩放, 代替 blendshape)

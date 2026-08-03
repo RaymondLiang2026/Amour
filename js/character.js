@@ -70,9 +70,9 @@ export const HAIR_STYLES = [
   {id:'short',     name:'利落短发', thumb:'assets/character/thumbs/hair_short.png'},
 ];
 export const OUTFITS = [
-  {id:'base',    name:'基础',   color:'#FDFDFD', image:'assets/character/builtin/bi_01_base.png'},
-  {id:'academy', name:'学院风', color:'#3b5a8c', image:'assets/character/builtin/bi_06_academy.png'},
-  {id:'coat',    name:'都市风衣',color:'#707070', image:'assets/character/builtin/bi_07_urban.png'},
+  {id:'base',    name:'基础',   color:'#FDFDFD', image:'assets/character/thumbs/outfit_base.png'},
+  {id:'academy', name:'学院风', color:'#3b5a8c', image:'assets/character/thumbs/outfit_academy.png'},
+  {id:'coat',    name:'都市风衣',color:'#707070', image:'assets/character/thumbs/outfit_urban.png'},
   {id:'hoodie',  name:'休闲卫衣',color:'#e8e0d4', image:'assets/character/thumbs/outfit_hoodie.png'},
 ];
 export const ACCESSORIES = [
