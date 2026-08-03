@@ -47,7 +47,7 @@ export class Scene3D {
     this.talkT = 0; this.reaction = null; this.reactionT = 0;
     this.modelReady = false;
     this.currentViewAngle = 0; // 平滑角度
-    this.blinkTimer = 2.8; this.blinkPhase = 0; // s / 0..1
+    this.blinkTimer = 2.6 + Math.random() * 2.4; this.blinkPhase = 0; // s / 0..1
     this.talkPulse = 0;
     this._initRenderer(); this._initScene(); this._initEnvAndLights();
     this._initCharacter();
@@ -71,9 +71,9 @@ export class Scene3D {
   _initScene() {
     this.scene = new THREE.Scene();
     // 正交式取景：透视相机，人物 Plane 位于 z=0
-    this.camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 60);
+    this.camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 60);
     this.camTarget = new THREE.Vector3(0, 0, 0);
-    this.camBase = new THREE.Vector3(0, 0, 4.2);
+    this.camBase = new THREE.Vector3(0, 0, 7.6);
     this.camera.position.copy(this.camBase);
     this.camera.lookAt(this.camTarget);
     this.propsGroup = new THREE.Group();
@@ -90,11 +90,11 @@ export class Scene3D {
 
     // rim light 硬光晕（Plane 后方，2 层）
     const rimMat = new THREE.SpriteMaterial({ map: makeRimTexture(), color: 0xffe9cf, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
-    this.rim = new THREE.Sprite(rimMat); this.rim.position.set(0, -0.05, -0.9); this.rim.scale.set(4.6, 5.6, 1); this.scene.add(this.rim);
+    this.rim = new THREE.Sprite(rimMat); this.rim.position.set(0, -0.15, -0.9); this.rim.scale.set(4.8, 6.8, 1); this.scene.add(this.rim);
 
     // 柔光晕
     const glowMat = new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xffe9cf, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
-    this.glow = new THREE.Sprite(glowMat); this.glow.position.set(0, 0.05, -0.55); this.glow.scale.set(4.0, 4.6, 1); this.scene.add(this.glow);
+    this.glow = new THREE.Sprite(glowMat); this.glow.position.set(0, -0.05, -0.55); this.glow.scale.set(4.4, 5.6, 1); this.scene.add(this.glow);
   }
 
   _initCharacter() {
@@ -125,7 +125,7 @@ export class Scene3D {
     const front = this.textures.front || Object.values(this.textures)[0];
     if (!front || !front.image) { console.warn('no front tex'); return; }
     const w = front.image.width, h = front.image.height;
-    const planeH = 3.6;                     // 视口空间高
+    const planeH = 5.4;                     // 视口空间高 (全身立绘)
     const planeW = planeH * (w / h);
     const geo = new THREE.PlaneGeometry(planeW, planeH);
     this._planeSize = { w: planeW, h: planeH };
@@ -187,8 +187,8 @@ export class Scene3D {
 
     this.planeMain = new THREE.Mesh(geo, shaderMat);
     this.planeBlink = new THREE.Mesh(geo, matBlink);
-    this.planeMain.position.set(0, -0.05, 0);
-    this.planeBlink.position.set(0, -0.05, 0.004);
+    this.planeMain.position.set(0, -0.15, 0);
+    this.planeBlink.position.set(0, -0.15, 0.004);
     this.character.add(this.planeMain); this.character.add(this.planeBlink);
 
     this.modelReady = true;
@@ -255,7 +255,7 @@ export class Scene3D {
         const ch = this.raycaster.intersectObject(this.planeMain, true);
         if (ch.length) {
           const hit = ch[0]; const y = hit.point.y;
-          const part = (y > 0.6) ? 'face' : (y > 0.0 ? 'neck' : 'body');
+          const part = (y > 1.3) ? 'face' : (y > 0.0 ? 'neck' : 'body');
           this.cb.onCharacterClick && this.cb.onCharacterClick(part);
         }
       }
@@ -277,8 +277,8 @@ export class Scene3D {
   _resize() { this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.renderer.setSize(innerWidth, innerHeight); }
 
   headScreen() {
-    // 头部在 Plane 上部 ~y=1.4 处（planeH=3.6, headY≈+1.35）
-    const p = new THREE.Vector3(0, 1.35, 0.01);
+    // 头部在 Plane 上部 ~y=2.2 处（planeH=5.4, 全身构图头部靠上）
+    const p = new THREE.Vector3(0, 2.2, 0.01);
     const v = p.clone().project(this.camera);
     return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight, visible: v.z < 1 };
   }
@@ -302,13 +302,13 @@ export class Scene3D {
     requestAnimationFrame(() => this._loop());
     const dt = Math.min(this.clock.getDelta(), 0.05), t = this.clock.elapsedTime;
 
-    this.aim.x = lerp(this.aim.x, this.mouse.x, 0.18);
-    this.aim.y = lerp(this.aim.y, this.mouse.y, 0.18);
+    this.aim.x = lerp(this.aim.x, this.mouse.x, 0.22);
+    this.aim.y = lerp(this.aim.y, this.mouse.y, 0.22);
 
     if (this.modelReady) {
       // 目标视角角度: 鼠标最边缘 → 90°(与 stops 端点对齐, 无 mix 残留)
       const targetAngle = this.aim.x * 90;
-      this.currentViewAngle = lerp(this.currentViewAngle, targetAngle, 0.30);
+      this.currentViewAngle = lerp(this.currentViewAngle, targetAngle, 0.35);
       const { a, b, t: mix } = this._pickViews(this.currentViewAngle);
 
       // 更新 ShaderMaterial 双纹理与 mix

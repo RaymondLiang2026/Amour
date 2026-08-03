@@ -40,32 +40,26 @@
         <p class="subtitle">在暖光舞台上，塑造属于你的陪伴形象</p>
       </header>
 
-      <div class="creation-body">
-        <div class="gender-choose">
-          <h2 class="step-title"><span class="step-no">1</span> 选择基础形象</h2>
-          <div class="gender-cards">
-            <button class="gender-card" data-gender="female">
-              <canvas class="portrait-preview" data-preview="female" width="220" height="300"></canvas>
-              <span class="gender-name">女生 · Yui</span>
-              <span class="gender-desc">温婉知性 · 栗棕长发</span>
-            </button>
-            <button class="gender-card" data-gender="male">
-              <canvas class="portrait-preview" data-preview="male" width="220" height="300"></canvas>
-              <span class="gender-name">男生 · Ren</span>
-              <span class="gender-desc">清隽沉静 · 利落短发</span>
-            </button>
+      <div class="creation-body yui-only">
+        <div class="yui-showcase">
+          <div class="portrait-frame">
+            <img class="portrait-preview-img" src="./assets/character/yui_preview.png" alt="Yui 新脸模半身立绘" />
+          </div>
+          <div class="yui-caption">
+            <span class="gender-name">Yui</span>
+            <span class="gender-desc">温婉知性 · 新脸模立绘</span>
           </div>
         </div>
 
         <div class="creation-fields">
-          <h2 class="step-title"><span class="step-no">2</span> 给 TA 起个名字</h2>
+          <h2 class="step-title"><span class="step-no">1</span> 给 TA 起个名字</h2>
           <input id="input-name" class="field-input" type="text" maxlength="12" placeholder="Yui" />
 
-          <h2 class="step-title"><span class="step-no">3</span> TA 该怎么称呼你</h2>
+          <h2 class="step-title"><span class="step-no">2</span> TA 该怎么称呼你</h2>
           <input id="input-callname" class="field-input" type="text" maxlength="12" placeholder="主人" />
 
-          <button id="btn-start" class="btn-primary" disabled>进入舞台 →</button>
-          <p class="hint">先选择左侧的基础形象</p>
+          <button id="btn-start" class="btn-primary">进入舞台 →</button>
+          <p class="hint">可直接进入，也可以先给 Yui 起一个专属名字</p>
         </div>
       </div>
     </div>
@@ -189,8 +183,7 @@
       <div class="panel-group">
         <h4>音色</h4>
         <div class="light-modes">
-          <button class="voice-btn" data-voice="female">女声</button>
-          <button class="voice-btn" data-voice="male">男声</button>
+          <button class="voice-btn active" data-voice="female">Yui 女声</button>
         </div>
       </div>
       <div class="panel-group">

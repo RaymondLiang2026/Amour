@@ -28,7 +28,7 @@ class App{
     const saved=Store.load();
     const params=new URLSearchParams(location.search);
     if(saved){ this.cfg=saved; this.enterStage(); }
-    else if(params.has('autostage')){ this.cfg=Store.defaultConfig(params.get('autostage')==='male'?'male':'female'); this.cfg.createdAt=Date.now(); this.enterStage(); }
+    else if(params.has('autostage')){ this.cfg=Store.defaultConfig(); this.cfg.createdAt=Date.now(); this.enterStage(); }
     else { this.showCreation(); }
     $('#loading').classList.add('hidden');
   }
