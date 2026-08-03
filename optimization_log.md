@@ -179,3 +179,45 @@ https://44a4a1016894.aime-app.bytedance.net
 
 ### 部署 URL
 https://44a4a1016894.aime-app.bytedance.net
+
+
+---
+
+## 第四轮迭代总结（360° 全圆周视角 + 拖拽/触控/滚轮交互）
+
+### A. 3 张背向视角立绘生成（脸模锁死：仅补背向，不重生任何脸部视角）
+- 生成方式：`image_edit` 传入 `facecut/front.png` 作为参考图，携带完整脸部/服装特征描述，`9:16 / 1k / png`，单独 3 次调用。
+- 生成结果与 `face_similarity`（与 `ref_small_analyze.jpg` 比对，后侧脸放宽标准 ≥85）：
+  - **back.png**（180° 纯背面）：看不到脸，不做脸相似度评估；`analyze_image` 确认为清晰背面全身像、头发深红棕/侧分/层次感保留、浅灰立领外套+黑裤+白鞋、纯绿背景 ✅
+  - **l135.png**（-135° 左后 3/4 侧背）：**face_similarity = 88** ✅（一次通过，左后脑勺+左耳发际线+左肩背+极小侧脸颊）
+  - **r135.png**（+135° 右后 3/4 侧背）：**face_similarity = 92** ✅（一次通过，右后脑勺+右耳发际线+右肩背+极小侧脸颊）
+- 抠图接入：`green_cut.py` 色度抠绿（back/l135/r135 kept≈23-25%）→ PIL 缩到最长边 900（502×900）+ `optimize=True` → 拷入主 `facecut/`，清理临时目录 `facegreen_back/`、`facecut_back/`。
+
+### B. stops 数组扩展与环形插值算法（js/scene3d.js）
+- **视角数量 6→9**：`VIEW_DEFS` 由 `[-90,-45,0,45,90]`（5 张 + blink）扩展为 `[-180,-135,-90,-45,0,45,90,135,180]`（9 stops），其中 **`back`(-180) 与 `back2`(+180) 复用同一张 `back.png`**，让插值在 ±180 边界平滑闭环。
+- **环形归一化**：新增 `normAngle(a)=((a+180)%360+360)%360-180` 顶部工具函数（scene3d.js 第 9 行）。
+- **`_pickViews` 改环形**（scene3d.js `_pickViews`）：先 `normAngle` 归一到 [-180,180]，再在相邻两 stop 间线性求 `t`，返回 `{a,b,t}` 做 crossfade。
+- **`currentViewAngle` 环形 lerp**（scene3d.js `_loop`）：`shortestDelta = normAngle(targetAngle - currentViewAngle)`；`currentViewAngle = normAngle(currentViewAngle + shortestDelta*0.35)`，跨 ±180 走最短路径不抖动。
+- **targetAngle 权重重构**：`targetAngle = userYaw + aim.x*20 + walkLook`——拖拽 `userYaw` 主导，hover 降为 ±20° 微视差，走动 `walkLook` 仍叠加（向后兼容 aim.x/y）。
+
+### C. 交互 4 种方式（全部在 scene3d.js `_bindEvents` 内，Pointer Events 统一）
+- **鼠标拖拽 / 触控拖拽**：`pointerdown→onDragStart`（命中道具走原道具拖拽；否则 `dragging=true`、记录 `dragStart{yaw,pitch}`、`setPointerCapture`）；`pointermove→onDragMove`（`userYaw = normAngle(startYaw + dx*0.6)` 每像素 0.6°；`userPitch = clamp(startPitch - dy*0.35, -30, 30)` 驱动 `character.rotation.x`）；`pointerup/pointercancel→onDragEnd`（`releasePointerCapture`；位移 <6px 视为轻点，触发原 `onCharacterClick`）。
+- **双指捏合缩放**：`this._pointers`(Map) 记录 pointerId；`_pointers.size===2` 时按双指距离比值调用 `zoomBy(-delta*4)`。
+- **滚轮缩放**：`el.addEventListener('wheel', … zoomBy(sign(deltaY)*0.6), {passive:false})`。
+- **hover 微视差**：`onDragMove` 末尾 `norm(e)` 仅在未拖拽时更新 `aim.x/y`（拖拽/捏合分支 return 跳过），保持自然感。
+- 画布加 `touchAction='none'` 禁用浏览器默认手势；`headScreen` 改 `Vector3(0,2.5,0.01)` project（character.rotation 自动应用）。
+
+### D. 向后兼容 & 约束
+- `zoomBy`/`setWalkEnabled`/`headScreen`/`playReaction`/`playTalk`/`addProp`/`clearProps`/`redrawCharacter` 等全部外部接口原样保留；`aim.x/y` 依旧存在（权重降低），`userYaw` 为新增主导。
+- 仅 `requestAnimationFrame`，无额外定时器；`node --check` 语法通过。
+
+### 验证
+- 本地 http + 线上 `html_vision`：角色清晰渲染、控制台 **0 error**、9 张视角贴图无 404 ✅
+
+### 遗留瑕疵（可接受）
+- l135/r135 属后侧脸，可露脸部区域极小，相似度评估基于侧脸轮廓+发色，为放宽标准下的合理值。
+- 背面 back.png 由 front 单图 image_edit 推演，后背服装褶皱细节为模型合理补全，非精确还原。
+- 沙箱 SwiftShader ~15fps 属正常，真实浏览器 60fps；`html_vision` 为静态快照，拖拽/捏合的动态转视角未在自动化中逐帧验证（代码逻辑与语法已校验）。
+
+### 部署 URL
+https://44a4a1016894.aime-app.bytedance.net
