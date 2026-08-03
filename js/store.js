@@ -48,7 +48,7 @@ function normalizeSave(data){
   safe.hairStyle = validHair.includes(safe.hairStyle) ? safe.hairStyle : 'shoulder';
   safe.outfitColor = safe.outfitColor || '#FDFDFD';
   safe.props = [];
-  const validLooks = ['base','hair_short','hair_ponytail','hair_longcurly','color_brown','color_blonde','color_pink','outfit_school','outfit_street','outfit_sport'];
+  const validLooks = ['base','hair_short','hair_ponytail','hair_longcurly','color_brown','color_blonde','color_pink','outfit_school','outfit_street','outfit_sport','outfit_casual','outfit_street2','outfit_denim','outfit_urban','outfit_boxing','outfit_street3'];
   safe.look = validLooks.includes(safe.look) ? safe.look : 'base';
   if (!safe.assetImage || !String(safe.assetImage).includes('assets/generated/')) {
     safe.assetKind = 'outfit';

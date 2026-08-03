@@ -1,5 +1,5 @@
 // main.js — 启动与编排
-import { Scene3D } from './stage2d.js?v=r2d5-20260803c';
+import { Scene3D } from './stage2d.js?v=r2d5-20260803d';
 import * as Store from './store.js';
 import * as UI from './ui.js';
 import { RhythmGame } from './rhythm.js';

@@ -25,7 +25,7 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
 /* ---------- 构建外观面板（写实六视角造型：换发型 / 发色 / 服装） ---------- */
 // 说明：写实预渲染无法做「任意维度自由组合」（组合爆炸），故每个选项 = 一套完整六视角造型，
 // 以其余两项默认值（齐肩·黑·日常）为基线；base 即当前默认套（assets/realistic/character/*）。
-const LOOK_V='r2d5-20260803c';
+const LOOK_V='r2d5-20260803d';
 const CHAR_LOOKS={
   hair:[
     {id:'base',          name:'齐肩', e:'💇‍♀️'},
@@ -41,9 +41,15 @@ const CHAR_LOOKS={
   ],
   outfit:[
     {id:'base',          name:'日常', e:'👚'},
+    {id:'outfit_casual', name:'休闲', e:'🧥'},
     {id:'outfit_school', name:'校园', e:'🎒'},
-    {id:'outfit_street', name:'街头', e:'🧥'},
+    {id:'outfit_street', name:'街头', e:'🛹'},
+    {id:'outfit_street2',name:'潮牌', e:'🕶️'},
+    {id:'outfit_denim',  name:'牛仔', e:'👖'},
+    {id:'outfit_urban',  name:'都市', e:'🏙️'},
+    {id:'outfit_boxing', name:'拳击', e:'🥊'},
     {id:'outfit_sport',  name:'运动', e:'🏃‍♀️'},
+    {id:'outfit_street3',name:'机能', e:'🧰'},
   ],
 };
 const lookThumb=id=> id==='base'
@@ -78,9 +84,9 @@ function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoj
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
-  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803c'},
-  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803c'},
-  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803c'},
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803d'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803d'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803d'},
 ];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
