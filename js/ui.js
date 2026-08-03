@@ -25,7 +25,7 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
 /* ---------- 构建外观面板（写实六视角造型：换发型 / 发色 / 服装） ---------- */
 // 说明：写实预渲染无法做「任意维度自由组合」（组合爆炸），故每个选项 = 一套完整六视角造型，
 // 以其余两项默认值（齐肩·黑·日常）为基线；base 即当前默认套（assets/realistic/character/*）。
-const LOOK_V='r2d5-20260803e';
+const LOOK_V='r2d5-20260803f';
 const CHAR_LOOKS={
   hair:[
     {id:'base',          name:'齐肩', e:'💇‍♀️'},
@@ -91,9 +91,9 @@ function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoj
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
-  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803e'},
-  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803e'},
-  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803e'},
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803f'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803f'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803f'},
 ];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
