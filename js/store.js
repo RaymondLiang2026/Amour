@@ -37,7 +37,7 @@ function normalizeSave(data){
   safe.aiName = safe.aiName === legacyName ? 'Yui' : (safe.aiName || 'Yui');
   safe.voiceGender = 'female';
   safe.wakeWord = !safe.wakeWord || safe.wakeWord === legacyName ? safe.aiName : safe.wakeWord;
-  const validOutfits = ['base','academy','coat','hoodie','tee'];
+  const validOutfits = ['base','academy','coat','hoodie'];
   safe.outfit = validOutfits.includes(safe.outfit) ? safe.outfit : 'base';
   safe.outfitColor = safe.outfitColor || '#FDFDFD';
   safe.accessories = Object.assign({ glasses:false, hairpin:true, tie:false }, safe.accessories || {});

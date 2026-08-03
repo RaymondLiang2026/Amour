@@ -34,6 +34,18 @@ const VIEW_DEFS = [
   { name: 'back2', angle: +180, url: 'assets/character/facecut/back.png' },  // 复用 back
 ];
 const BLINK_URL = 'assets/character/facecut/blink.png';
+const OUTFIT_STAGE_TEXTURES = {
+  base: 'assets/character/stage_variants/outfit_base.png',
+  academy: 'assets/character/stage_variants/outfit_academy.png',
+  coat: 'assets/character/stage_variants/outfit_coat.png',
+  hoodie: 'assets/character/stage_variants/outfit_hoodie.png',
+};
+const HAIR_STAGE_TEXTURES = {
+  long_wavy: 'assets/character/stage_variants/hair_long_wavy.png',
+  bob: 'assets/character/stage_variants/hair_bob.png',
+  ponytail: 'assets/character/stage_variants/hair_ponytail.png',
+  short: 'assets/character/stage_variants/hair_short.png',
+};
 
 // —— 程序化背景光晕 —— //
 function makeGlowTexture(inner = 'rgba(255,255,255,.55)', mid = 'rgba(255,240,220,.28)') {
@@ -148,7 +160,9 @@ export class Scene3D {
     this.character = new THREE.Group(); this.scene.add(this.character);
     // 两层 Plane 做 crossfade，各自 8 张贴图切换
     const loader = new THREE.TextureLoader();
+    this.textureLoader = loader;
     this.textures = {};
+    this.variantTextures = {};
     const promises = VIEW_DEFS.map(v => new Promise(res => {
       loader.load(v.url, tex => {
         tex.colorSpace = THREE.SRGBColorSpace;
@@ -231,12 +245,19 @@ export class Scene3D {
 
     // 眨眼 Plane 独立：仅覆盖正面视角
     const matBlink = new THREE.MeshBasicMaterial({ map: this.textures.blink || this.textures.front, transparent: true, alphaTest: 0.02, depthWrite: false, opacity: 0 });
+    const outfitMat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.03, depthWrite: false, opacity: 0.58 });
+    const hairMat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.03, depthWrite: false, opacity: 0.55 });
 
     this.planeMain = new THREE.Mesh(geo, shaderMat);
+    this.planeOutfit = new THREE.Mesh(geo, outfitMat);
+    this.planeHair = new THREE.Mesh(geo, hairMat);
     this.planeBlink = new THREE.Mesh(geo, matBlink);
     this.planeMain.position.set(0, -0.15, 0);
-    this.planeBlink.position.set(0, -0.15, 0.004);
-    this.character.add(this.planeMain); this.character.add(this.planeBlink);
+    this.planeOutfit.position.set(0, -0.15, 0.006);
+    this.planeHair.position.set(0, -0.15, 0.008);
+    this.planeBlink.position.set(0, -0.15, 0.012);
+    this.character.add(this.planeMain); this.character.add(this.planeOutfit); this.character.add(this.planeHair); this.character.add(this.planeBlink);
+    this._syncVariantPlanes();
 
     this.modelReady = true;
     document.getElementById('loading')?.classList.add('hidden');
@@ -304,10 +325,34 @@ export class Scene3D {
     if (this.glow) this.glow.material.opacity = 0.4 + (1 - t) * 0.35;
     this.renderer.toneMappingExposure = 0.92 + t * 0.28;
   }
+  _getVariantTexture(key, url) {
+    if (!url || !this.textureLoader) return null;
+    if (this.variantTextures[key]) return this.variantTextures[key];
+    const tex = this.textureLoader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; });
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.variantTextures[key] = tex;
+    return tex;
+  }
+  _syncVariantPlane(plane, key, url, visible = true, color = 0xffffff) {
+    if (!plane) return;
+    const tex = this._getVariantTexture(key, url);
+    if (!tex) { plane.visible = false; return; }
+    plane.material.map = tex;
+    plane.material.color.set(color);
+    plane.material.needsUpdate = true;
+    plane.visible = visible;
+  }
+  _syncVariantPlanes() {
+    const outfit = this.cfg.outfit || 'base';
+    const hair = this.cfg.hairStyle || 'bob';
+    this._syncVariantPlane(this.planeOutfit, `outfit:${outfit}`, OUTFIT_STAGE_TEXTURES[outfit] || OUTFIT_STAGE_TEXTURES.base, outfit !== 'base', this.cfg.outfitColor || 0xffffff);
+    this._syncVariantPlane(this.planeHair, `hair:${hair}`, HAIR_STAGE_TEXTURES[hair] || HAIR_STAGE_TEXTURES.bob, hair !== 'bob', this.cfg.hairColor || 0xffffff);
+  }
   redrawCharacter() {
     this.applyLight(this.cfg.light);
+    this._syncVariantPlanes();
     if (this.mainMat?.uniforms) {
-      const outfitBoost = this.cfg.outfit === 'urban' ? 0.1 : this.cfg.outfit === 'academy' ? 0.05 : 0;
+      const outfitBoost = this.cfg.outfit === 'coat' ? 0.1 : this.cfg.outfit === 'academy' ? 0.05 : this.cfg.outfit === 'hoodie' ? -0.02 : 0;
       const accessoryBoost = this.cfg.accessories?.glasses ? 0.03 : 0;
       this.mainMat.uniforms.uSat.value = 1.08 + outfitBoost;
       this.mainMat.uniforms.uCon.value = 1.04 + accessoryBoost;

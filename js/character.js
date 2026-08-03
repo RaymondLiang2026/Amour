@@ -74,7 +74,6 @@ export const OUTFITS = [
   {id:'academy', name:'学院风', color:'#3b5a8c', image:'assets/character/builtin/bi_06_academy.png'},
   {id:'coat',    name:'都市风衣',color:'#707070', image:'assets/character/builtin/bi_07_urban.png'},
   {id:'hoodie',  name:'休闲卫衣',color:'#e8e0d4', image:'assets/character/thumbs/outfit_hoodie.png'},
-  {id:'tee',     name:'运动短袖',color:'#f2f2f2', image:'assets/character/thumbs/outfit_tee.png'},
 ];
 export const ACCESSORIES = [
   {id:'glasses', name:'眼镜', icon:'👓'},
