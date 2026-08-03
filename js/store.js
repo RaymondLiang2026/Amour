@@ -20,6 +20,8 @@ export function defaultConfig(){
     daynight: 62,
     walkEnabled: true,   // 角色场景内走动
     props: [],           // [{type, x, z, rot}]
+    // 写实六视角造型（换发型/发色/服装整套切换）base=默认套
+    look: 'base',
     // 进度
     affinity: 0,
     unlocked: false,
@@ -46,6 +48,8 @@ function normalizeSave(data){
   safe.hairStyle = validHair.includes(safe.hairStyle) ? safe.hairStyle : 'shoulder';
   safe.outfitColor = safe.outfitColor || '#FDFDFD';
   safe.props = [];
+  const validLooks = ['base','hair_short','hair_ponytail','hair_longcurly','color_brown','color_blonde','color_pink','outfit_school','outfit_street','outfit_sport'];
+  safe.look = validLooks.includes(safe.look) ? safe.look : 'base';
   if (!safe.assetImage || !String(safe.assetImage).includes('assets/generated/')) {
     safe.assetKind = 'outfit';
     safe.assetImage = 'assets/generated/outfit_basic.png?v=assets20260803b';

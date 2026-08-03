@@ -2,7 +2,7 @@
 // 单一渲染出口：写实场景背景 + 写实人物六视角 180° 旋转 + 缩放 + 景深视差。
 // 纯 DOM/CSS，无 Three.js、无 shader 抠图、无低模道具，彻底避免多来源渲染打架。
 
-const V = 'r2d5-20260803b';
+const V = 'r2d5-20260803c';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -12,7 +12,10 @@ const SCENES = {
   bedroom: `assets/realistic/scene/bedroom.png?v=${V}`,
 };
 // 六视角写实人物（back 复用于 ±180°，形成正面→背面的完整 180° 转身）
-const CHAR = name => `assets/realistic/character/${name}.png?v=${V}`;
+// look='base' 用默认根目录素材；其余造型走 looks/<look>/ 子目录，实现「换发型/发色/服装」整套六视角切换。
+const CHAR = (name, look) => (look && look !== 'base')
+  ? `assets/realistic/character/looks/${look}/${name}.png?v=${V}`
+  : `assets/realistic/character/${name}.png?v=${V}`;
 const VIEW_NAMES = ['back', 'l90', 'l45', 'front', 'r45', 'r90'];
 // 角度停靠点（度）：拖拽横向改变 yaw，就近取相邻两张做 crossfade
 const STOPS = [
@@ -33,6 +36,7 @@ export class Scene3D {
 
     // 状态：单一真相源
     this.theme = this.cfg.theme || 'stage';
+    this.look = this.cfg.look || 'base';    // 当前造型（发型/发色/服装整套六视角）
     this.yaw = 0; this.yawDisp = 0;         // 目标/显示旋转角
     this.zoom = 1; this.zoomTarget = 1;     // 缩放
     this.parX = 0; this.parY = 0;           // 视差目标
@@ -70,7 +74,7 @@ export class Scene3D {
     this.imgs = {};
     VIEW_NAMES.forEach((name, i) => {
       const im = document.createElement('img');
-      im.className = 's2-view'; im.src = CHAR(name); im.alt = 'Yui';
+      im.className = 's2-view'; im.src = CHAR(name, this.look); im.alt = 'Yui';
       im.draggable = false; im.style.opacity = name === 'front' ? '1' : '0';
       im.style.zIndex = String(i);
       this.imgs[name] = im; this.charWrap.appendChild(im);
@@ -138,6 +142,13 @@ export class Scene3D {
     if (this.bg) this.bg.style.backgroundImage = `url("${url}")`;
     this.cbs.onChange?.();
   }
+  // 切换造型：整套六视角素材热替换，保持当前旋转角/缩放/视差状态不变
+  applyLook(look) {
+    this.look = look || 'base'; this.cfg.look = this.look;
+    VIEW_NAMES.forEach(n => { if (this.imgs[n]) this.imgs[n].src = CHAR(n, this.look); });
+    this.bounce = 1;
+    this.cbs.onChange?.();
+  }
   applyLight(mode) {
     this.light = mode; this.cfg.light = mode;
     this._applyGrade();
@@ -164,6 +175,8 @@ export class Scene3D {
     this.applyLight(this.cfg.light || this.light);
     this.setDayNight(typeof this.cfg.daynight === 'number' ? this.cfg.daynight : this.daynight);
     this.walkEnabled = this.cfg.walkEnabled !== false;
+    const look = this.cfg.look || 'base';
+    if (look !== this.look) this.applyLook(look);
   }
   // 低模道具体系已下线：保留空实现，兼容旧调用
   addProp() {}

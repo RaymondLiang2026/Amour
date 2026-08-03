@@ -22,20 +22,55 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
   }
 }
 
-/* ---------- 构建外观面板 ---------- */
-export function buildAppearancePanel(_app){
-  // Phase-2：写实重构版暂不支持旧版低模的「换发型/发色/换装/眼睛/配饰」面板。
-  // 这里仅做提示与清空，保证缺少旧资源时页面仍稳定运行。
-  const hg=$('#hair-grid');
-  if(hg){
-    hg.innerHTML='<div class="panel-tip">当前为写实重构版：已上线「写实场景 + 人物 180° 旋转 + 缩放」。写实换发型/发色/换装（多视角）将在下一阶段接入。</div>';
-  }
+/* ---------- 构建外观面板（写实六视角造型：换发型 / 发色 / 服装） ---------- */
+// 说明：写实预渲染无法做「任意维度自由组合」（组合爆炸），故每个选项 = 一套完整六视角造型，
+// 以其余两项默认值（齐肩·黑·日常）为基线；base 即当前默认套（assets/realistic/character/*）。
+const LOOK_V='r2d5-20260803c';
+const CHAR_LOOKS={
+  hair:[
+    {id:'base',          name:'齐肩', e:'💇‍♀️'},
+    {id:'hair_short',    name:'短发', e:'✂️'},
+    {id:'hair_ponytail', name:'马尾', e:'🎀'},
+    {id:'hair_longcurly',name:'长卷', e:'🌀'},
+  ],
+  color:[
+    {id:'base',         name:'黑', sw:'#2D2926'},
+    {id:'color_brown',  name:'棕', sw:'#6b4a2b'},
+    {id:'color_blonde', name:'金', sw:'#d9b45b'},
+    {id:'color_pink',   name:'粉', sw:'#e08bb0'},
+  ],
+  outfit:[
+    {id:'base',          name:'日常', e:'👚'},
+    {id:'outfit_school', name:'校园', e:'🎒'},
+    {id:'outfit_street', name:'街头', e:'🧥'},
+    {id:'outfit_sport',  name:'运动', e:'🏃‍♀️'},
+  ],
+};
+const lookThumb=id=> id==='base'
+  ? `assets/realistic/character/preview/front.jpg?v=${LOOK_V}`
+  : `assets/realistic/character/looks/${id}/preview.jpg?v=${LOOK_V}`;
 
-  const og=$('#outfit-grid');
-  if(og) og.innerHTML='';
-
-  const hs=$('#hair-swatches');
-  if(hs) hs.innerHTML='';
+export function buildAppearancePanel(app){
+  const {cfg}=app;
+  if(!cfg.look) cfg.look='base';
+  const groups={hair:$('#hair-grid'), color:$('#hair-swatches'), outfit:$('#outfit-grid')};
+  const render=()=>{
+    Object.entries(CHAR_LOOKS).forEach(([g,items])=>{
+      const wrap=groups[g]; if(!wrap) return; wrap.innerHTML='';
+      const owns=items.some(x=>x.id===cfg.look);   // 当前造型是否属于本组
+      items.forEach(it=>{
+        const on = owns ? (cfg.look===it.id) : (it.id==='base');
+        const btn=document.createElement('button'); btn.className='thumb'+(on?' selected':'');
+        const badge = g==='color'
+          ? `<span class="thumb-emoji" style="background:${it.sw};width:16px;height:16px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15)"></span>`
+          : `<span class="thumb-emoji">${it.e}</span>`;
+        btn.innerHTML=`<img src="${lookThumb(it.id)}" alt="${it.name}" class="thumb-img" loading="lazy">${badge}<span class="thumb-label">${it.name}</span>`;
+        btn.onclick=()=>{ cfg.look=it.id; app.scene.applyLook(it.id); markApplied(app,`造型已切换：${it.name}`); app.save(); render(); };
+        wrap.appendChild(btn);
+      });
+    });
+  };
+  render();
 }
 
 function refreshSelected(wrap, active){ $$('.thumb',wrap).forEach(t=>t.classList.remove('selected')); active.classList.add('selected'); }
@@ -43,9 +78,9 @@ function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoj
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
-  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803'},
-  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803'},
-  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803'},
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803c'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803c'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803c'},
 ];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
