@@ -2,7 +2,7 @@
 // 单一渲染出口：写实场景背景 + 写实人物六视角 180° 旋转 + 缩放 + 景深视差。
 // 纯 DOM/CSS，无 Three.js、无 shader 抠图、无低模道具，彻底避免多来源渲染打架。
 
-const V = 'r2d5-20260803m';
+const V = 'r2d5-20260803n';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -589,14 +589,16 @@ export class Scene3D {
 
     try {
       const data = await this._ensureRigLayer();
-      const full = data.rig.rig_type === 'full';
-      const cls = `rig-${full ? act : 'limited'} rig-action`;
-      this._rigActionClass = cls;
-      this._rigLayer.className = `s2-rig-layer ${cls}`;
+      // 当前 rig 资源的 part_*.png 是整图透明画布。
+      // 如果对单个 part 图层旋转，整张透明画布会绕 pivot 转动，身体会被撕裂成碎片。
+      // 因此线上热修使用 safe rig：保留分层贴图叠放，但动作只施加在整体 rig 容器上。
+      const safeCls = `rig-safe-${act} rig-action rig-safe`;
+      this._rigActionClass = safeCls;
+      this._rigLayer.className = `s2-rig-layer ${safeCls}`;
       this._rigLayer.dataset.rigType = data.rig.rig_type || 'limited';
-      this.cbs.onAutoTalk?.(full ? line : '侧面视角使用轻动作～', act, { skipSceneReaction: true });
-      this.spawnEffect(full ? '✨' : '💫', full ? 6 : 4);
-      this._rigTimer = setTimeout(() => this._hideRig(), full ? 1550 : 1250);
+      this.cbs.onAutoTalk?.(line, act, { skipSceneReaction: true });
+      this.spawnEffect(data.rig.rig_type === 'full' ? '✨' : '💫', data.rig.rig_type === 'full' ? 6 : 4);
+      this._rigTimer = setTimeout(() => this._hideRig(), 1450);
     } catch (err) {
       console.warn('[rig] fallback to sprite action', err);
       this._hideRig();
