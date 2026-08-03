@@ -10,17 +10,6 @@ const normAngle = (a) => { a = ((a + 180) % 360 + 360) % 360 - 180; return a; };
 // 颜色线性插值：返回新 THREE.Color
 const lerpColor = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t);
 
-// —— 竖直渐变贴图（用于窗外景深 / 天光） —— //
-function makeGradientTexture(top = '#3a4a7a', bottom = '#c9a2d4') {
-  const c = document.createElement('canvas'); c.width = 8; c.height = 256;
-  const x = c.getContext('2d');
-  const g = x.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, top); g.addColorStop(1, bottom);
-  x.fillStyle = g; x.fillRect(0, 0, 8, 256);
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
 // —— 360° 全圆周视角 stops（环形；back 与 back2 复用同一张背面贴图，覆盖 -180/+180 边界）——
 const VIEW_DEFS = [
   { name: 'back',  angle: -180, url: 'assets/character/facecut/back.png' },
@@ -160,11 +149,11 @@ export class Scene3D {
 
     // rim light 硬光晕（Plane 后方，2 层）
     const rimMat = new THREE.SpriteMaterial({ map: makeRimTexture(), color: 0xffe9cf, transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending });
-    this.rim = new THREE.Sprite(rimMat); this.rim.position.set(0, -0.15, -0.9); this.rim.scale.set(4.8, 6.8, 1); this.scene.add(this.rim);
+    this.rim = new THREE.Sprite(rimMat); this.rim.position.set(0, -0.15, -0.9); this.rim.scale.set(4.8, 6.8, 1); this.rim.visible = false; this.scene.add(this.rim);
 
     // 柔光晕
     const glowMat = new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xffe9cf, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending });
-    this.glow = new THREE.Sprite(glowMat); this.glow.position.set(0, -0.05, -0.55); this.glow.scale.set(4.4, 5.6, 1); this.scene.add(this.glow);
+    this.glow = new THREE.Sprite(glowMat); this.glow.position.set(0, -0.05, -0.55); this.glow.scale.set(4.4, 5.6, 1); this.glow.visible = false; this.scene.add(this.glow);
   }
 
   _initCharacter() {
@@ -612,8 +601,8 @@ export class Scene3D {
 
     // 背景视差 + 光晕呼吸
     if (this.bgWarm) { const px = -this.aim.x * 14, py = this.aim.y * 10; const tr = `scale(1.12) translate(${px}px,${py}px)`; this.bgWarm.style.transform = tr; if (this.bgNight) this.bgNight.style.transform = tr; }
-    if (this.glow) { this.glow.material.rotation += dt * 0.02; }
-    if (this.rim) { this.rim.material.opacity = 0.48 + Math.sin(t * 1.2) * 0.05; }
+    if (this.glow?.visible) { this.glow.material.rotation += dt * 0.02; }
+    if (this.rim?.visible) { this.rim.material.opacity = 0.08 + Math.sin(t * 1.2) * 0.02; }
 
     this.renderer.render(this.scene, this.camera); this.cb.onFrame && this.cb.onFrame();
   }
@@ -622,108 +611,6 @@ export class Scene3D {
 /* ---------- 3D 场景主题（地板 + 墙 + 结构 + 灯光，构成真实纵深空间） ---------- */
 // 返回一个 Group，group.userData = { lights:[{light,night,day}], emissives:[{mat|sprite,night,day}] }
 // 供 setDayNight 按昼夜插值。所有几何体低多边形（12-24 分段）+ 柔和暖色材质。
-function buildSceneTheme(theme) {
-  const g = new THREE.Group();
-  const lights = [], emissives = [];
-  g.userData = { lights, emissives };
-  const FLOOR_TOP = -2.8;   // 地板顶面（地板中心 y=-3、高 0.3~0.4）
-
-  // 顶部灯罩 + 暖色 glow sprite（bloom 感）helper
-  const addLampGlow = (x, y, z, scale, night, day) => {
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeGlowTexture('rgba(255,240,210,.7)', 'rgba(255,220,170,.32)'),
-      color: 0xffd9a0, transparent: true, opacity: night, depthWrite: false,
-      blending: THREE.AdditiveBlending, fog: false,
-    }));
-    glow.position.set(x, y, z); glow.scale.set(scale, scale, 1); g.add(glow);
-    emissives.push({ sprite: glow, night, day });
-  };
-
-  if (theme === 'cafe') {
-    // 地板 木纹色
-    g.add(mesh(new THREE.BoxGeometry(20, 0.3, 15), std(0x8b5a3c, 0.7), 0, -3, 0));
-    // 后墙 米黄
-    g.add(mesh(new THREE.BoxGeometry(20, 6, 0.2), std(0xd4b995, 0.9), 0, 0, -6));
-    // 窗外景深（蓝紫渐变）
-    g.add(mesh(new THREE.PlaneGeometry(30, 8), new THREE.MeshBasicMaterial({ map: makeGradientTexture('#4a5aa0', '#c9a2d4'), side: THREE.DoubleSide }), 0, 1, -6.1));
-    // 3 个窗户（亮光暖白 emissive）
-    for (const wx of [-6, 0, 6]) {
-      const winMat = new THREE.MeshStandardMaterial({ color: 0xfff2d6, emissive: 0xffe6b0, emissiveIntensity: 0.9, roughness: 0.4 });
-      g.add(mesh(new THREE.BoxGeometry(2.9, 3.4, 0.08), std(0x6b4a30, 0.7), wx, 0.5, -5.92)); // 窗框
-      const win = mesh(new THREE.PlaneGeometry(2.5, 3), winMat, wx, 0.5, -5.85); g.add(win);
-      emissives.push({ mat: winMat, night: 1.8, day: 0.35 });
-      addLampGlow(wx, 0.5, -5.7, 2.6, 0.5, 0.12);
-    }
-    // 桌椅 4 组
-    const tableTop = std(0x9b7657, 0.6), tableLeg = std(0x4a3a30, 0.7), chair = std(0x7a5a42, 0.75);
-    for (const [tx, tz] of [[-5, 1.5], [0, 3], [5, 1.5], [-2, 4.5]]) {
-      const s = new THREE.Group();
-      s.add(mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.05, 18), tableTop, 0, 0.75, 0));   // 圆桌面
-      s.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.75, 8), tableLeg, 0, 0.375, 0)); // 桌腿
-      for (const [cx, cz] of [[-0.75, 0.1], [0.75, 0.1]]) s.add(mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), chair, cx, 0.25, cz)); // 2 椅
-      s.position.set(tx, FLOOR_TOP, tz); g.add(s);
-    }
-    // 3 个吊灯（SpotLight + 锥形灯罩，从 y=+3 向下照）
-    for (const lx of [-5, 0, 5]) {
-      const spot = new THREE.SpotLight(0xffdca0, 1.6, 14, Math.PI / 6, 0.5, 1.1);
-      spot.position.set(lx, 3, 1.5); spot.target.position.set(lx, FLOOR_TOP, 1.5);
-      g.add(spot); g.add(spot.target); lights.push({ light: spot, night: 1.3, day: 1.7 });
-      g.add(mesh(new THREE.ConeGeometry(0.3, 0.3, 12), new THREE.MeshStandardMaterial({ color: 0xcaa06a, emissive: 0xffcc88, emissiveIntensity: 0.5, side: THREE.DoubleSide }), lx, 3, 1.5));
-      addLampGlow(lx, 2.8, 1.5, 1.3, 0.55, 0.3);
-    }
-  }
-  else if (theme === 'bedroom') {
-    // 地板 浅木
-    g.add(mesh(new THREE.BoxGeometry(15, 0.3, 10), std(0xc9a476, 0.7), 0, -3, 0));
-    // 侧墙 x=±7 米色
-    for (const sx of [-7, 7]) g.add(mesh(new THREE.BoxGeometry(0.2, 5, 10), std(0xe8ddc8, 0.9), sx, -0.5, 0));
-    // 后墙 米粉
-    g.add(mesh(new THREE.BoxGeometry(15, 5, 0.2), std(0xebd8c9, 0.9), 0, -0.5, -5));
-    // 床（左侧）+ 棉被 + 枕头
-    g.add(mesh(new THREE.BoxGeometry(3, 0.7, 2), std(0xf5f0e8, 0.85), -4, FLOOR_TOP + 0.35, -2));
-    g.add(mesh(new THREE.BoxGeometry(2.8, 0.15, 0.6), std(0xffffff, 0.8), -4, FLOOR_TOP + 0.78, -2.6)); // 枕头
-    // 书桌（右侧）+ 桌腿
-    g.add(mesh(new THREE.BoxGeometry(1.5, 0.05, 0.8), std(0x9b7657, 0.6), 4, FLOOR_TOP + 0.75, -2));
-    for (const [dx, dz] of [[3.35, -1.7], [4.65, -1.7], [3.35, -2.3], [4.65, -2.3]]) g.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.75, 8), std(0x6b4a30, 0.7), dx, FLOOR_TOP + 0.375, dz));
-    // 窗户（天光 emissive）
-    const winMat = new THREE.MeshStandardMaterial({ color: 0xeef4ff, emissive: 0xbfd6ff, emissiveIntensity: 0.8, roughness: 0.4 });
-    g.add(mesh(new THREE.BoxGeometry(2.3, 2.8, 0.08), std(0xd8c8b4, 0.7), 0, 0.2, -4.94)); // 窗框
-    g.add(mesh(new THREE.PlaneGeometry(2, 2.5), winMat, 0, 0.2, -4.9));
-    emissives.push({ mat: winMat, night: 1.2, day: 0.3 });
-    addLampGlow(0, 0.2, -4.7, 2.2, 0.4, 0.1);
-    // 台灯（书桌上：小 Cylinder + PointLight 暖色）
-    g.add(mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.5, 10), std(0x6b4a30, 0.6), 4.4, FLOOR_TOP + 1.05, -2.2));
-    g.add(mesh(new THREE.ConeGeometry(0.18, 0.22, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xffe0b0, emissive: 0xffcc88, emissiveIntensity: 0.6, side: THREE.DoubleSide }), 4.4, FLOOR_TOP + 1.35, -2.2));
-    const lamp = new THREE.PointLight(0xffd19a, 1.6, 5); lamp.position.set(4.4, FLOOR_TOP + 1.3, -2.2); g.add(lamp);
-    lights.push({ light: lamp, night: 1.8, day: 0.8 });
-    addLampGlow(4.4, FLOOR_TOP + 1.32, -2.05, 1.0, 0.6, 0.25);
-  }
-  else {
-    // —— 舞台场景（stage，默认） ——
-    // 舞台地板：深色木质 + 轻微金属反射（简化 mirror）
-    g.add(mesh(new THREE.BoxGeometry(20, 0.4, 15), new THREE.MeshStandardMaterial({ color: 0x2b1810, roughness: 0.6, metalness: 0.15 }), 0, -3, 0));
-    // 舞台后墙 深棕
-    g.add(mesh(new THREE.BoxGeometry(20, 8, 0.3), std(0x3a2416, 0.85), 0, 1, -8));
-    // 侧幕布（暗红）
-    for (const sx of [-7, 7]) g.add(mesh(new THREE.PlaneGeometry(3, 8), new THREE.MeshBasicMaterial({ color: 0x5a1622, transparent: true, opacity: 0.92, side: THREE.DoubleSide }), sx, 1, -6));
-    // 远景纱幔（半透明暗紫）
-    g.add(mesh(new THREE.PlaneGeometry(30, 12), new THREE.MeshBasicMaterial({ color: 0x2a1d3a, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false }), 0, 2, -12));
-    // 顶部灯光阵列：4 个 SpotLight（暖白）+ 圆柱灯罩，从上方照下
-    for (const lx of [-6, -2, 2, 6]) {
-      const spot = new THREE.SpotLight(0xffe6c0, 2.2, 24, Math.PI / 7, 0.4, 1.1);
-      spot.position.set(lx, 6.5, 2); spot.target.position.set(lx * 0.5, FLOOR_TOP, -1);
-      g.add(spot); g.add(spot.target); lights.push({ light: spot, night: 1.6, day: 2.4 });
-      g.add(mesh(new THREE.CylinderGeometry(0.3, 0.22, 0.5, 14), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.6 }), lx, 6.6, 2));
-      addLampGlow(lx, 6.25, 2.15, 1.7, 0.6, 0.28);
-    }
-  }
-  return g;
-
-  // 局部 helper
-  function mesh(geo, mat, x, y, z) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); return m; }
-  function std(color, roughness) { return new THREE.MeshStandardMaterial({ color, roughness }); }
-}
-
 /* ---------- 道具（原样保留） ---------- */
 function buildProp(type) {
   const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0x9b7657, roughness: 0.72 }), dark = new THREE.MeshStandardMaterial({ color: 0x4a3a30, roughness: 0.76 });
