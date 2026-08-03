@@ -1,0 +1,13 @@
+/* stage-2d5.css — 写实 2.5D 舞台合成层 */
+.s2-root{position:fixed;inset:0;z-index:1;overflow:hidden;cursor:grab;background:#0b0d10}
+.s2-root.grabbing{cursor:grabbing}
+.s2-bg{position:absolute;inset:-6%;background-size:cover;background-position:center;
+  transform:scale(1.08);will-change:transform,filter;transition:filter .4s ease;backface-visibility:hidden}
+.s2-char{position:absolute;left:50%;bottom:0;height:100%;transform:translateX(-50%);
+  will-change:transform,filter;transition:filter .4s ease;pointer-events:none}
+.s2-view{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  height:94%;width:auto;object-fit:contain;user-select:none;-webkit-user-drag:none;
+  filter:drop-shadow(0 26px 40px rgba(0,0,0,.42));transition:opacity .12s linear}
+.s2-vignette{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(125% 100% at 50% 40%,rgba(0,0,0,0) 46%,rgba(0,0,0,.28) 82%,rgba(0,0,0,.5) 100%)}
+@media (max-width:640px){.s2-view{height:80%}}

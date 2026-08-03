@@ -1,5 +1,5 @@
 // ui.js — DOM 控制：定制面板、缩略图、气泡、好感度、称呼标签
-import { drawCharacter, HAIR_STYLES, OUTFITS, ACCESSORIES, HAIR_SWATCHES, EYE_SWATCHES } from './character.js';
+import { drawCharacter } from './character.js';
 import { reactForPart, replyFor, milestoneText } from './dialogue.js';
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -23,65 +23,29 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
 }
 
 /* ---------- 构建外观面板 ---------- */
-export function buildAppearancePanel(app){
-  const {cfg}=app;
-  // 发型（使用锁脸缩略图，脸部与参考图一致）
-  const hg=$('#hair-grid'); hg.innerHTML='';
-  HAIR_STYLES.forEach(h=>{
-    const btn=document.createElement('button'); btn.className='thumb'+(cfg.hairStyle===h.id?' selected':'');
-    if(h.thumb){
-      const img=document.createElement('img'); img.src=h.thumb; img.alt=h.name; img.className='thumb-img'; btn.appendChild(img);
-    } else {
-      const cv=document.createElement('canvas'); cv.width=130; cv.height=150; btn.appendChild(cv);
-      renderCharTo(cv, {...cfg, hairStyle:h.id}, {focusHead:true});
-    }
-    const lb=document.createElement('span'); lb.className='thumb-label'; lb.textContent=h.name; btn.appendChild(lb);
-    btn.onclick=()=>{ cfg.hairStyle=h.id; cfg.assetKind='hair'; cfg.assetImage=h.image; refreshSelected(hg,btn); app.updateChar(); markApplied(app,'发型已更新'); };
-    hg.appendChild(btn);
-  });
-  // 发色
-  buildSwatches($('#hair-swatches'), HAIR_SWATCHES, cfg.hairColor, (c, item)=>{ cfg.hairColor=c; cfg.hairColorId=item?.id || ''; cfg.assetKind='hairColor'; cfg.assetImage=item?.image || ''; $('#hair-color').value=c; app.updateChar(); refreshHairThumbs(app); markApplied(app,'发色已更新'); });
-  $('#hair-color').value=cfg.hairColor; $('#hair-color').oninput=(e)=>{ cfg.hairColor=e.target.value; app.updateChar(); refreshHairThumbs(app); };
-  // 服装
-  refreshOutfitThumbs(app);
-  $('#outfit-color').value=cfg.outfitColor; $('#outfit-color').oninput=(e)=>{ cfg.outfitColor=e.target.value; app.updateChar(); refreshOutfitThumbs(app); };
-  // 眼睛
-  buildSwatches($('#eye-swatches'), EYE_SWATCHES, cfg.eyeColor, (c)=>{ cfg.eyeColor=c; $('#eye-color').value=c; app.updateChar(); markApplied(app,'眼睛颜色已更新'); });
-  $('#eye-color').value=cfg.eyeColor; $('#eye-color').oninput=(e)=>{ cfg.eyeColor=e.target.value; app.updateChar(); };
-  // 配饰
-  const ag=$('#accessory-grid'); ag.innerHTML='';
-  ACCESSORIES.forEach(a=>{
-    const chip=document.createElement('button'); chip.className='chip'+(cfg.accessories[a.id]?' selected':'');
-    chip.innerHTML=`${a.icon} ${a.name}`;
-    chip.onclick=()=>{ cfg.accessories[a.id]=!cfg.accessories[a.id]; chip.classList.toggle('selected'); app.updateChar(); markApplied(app,'配饰已更新'); };
-    ag.appendChild(chip);
-  });
+export function buildAppearancePanel(_app){
+  // Phase-2：写实重构版暂不支持旧版低模的「换发型/发色/换装/眼睛/配饰」面板。
+  // 这里仅做提示与清空，保证缺少旧资源时页面仍稳定运行。
+  const hg=$('#hair-grid');
+  if(hg){
+    hg.innerHTML='<div class="panel-tip">当前为写实重构版：已上线「写实场景 + 人物 180° 旋转 + 缩放」。写实换发型/发色/换装（多视角）将在下一阶段接入。</div>';
+  }
+
+  const og=$('#outfit-grid');
+  if(og) og.innerHTML='';
+
+  const hs=$('#hair-swatches');
+  if(hs) hs.innerHTML='';
 }
-function refreshHairThumbs(app){ const hg=$('#hair-grid'); if(!hg) return; $$('.thumb',hg).forEach((btn,i)=>{ const cv=$('canvas',btn); if(cv) renderCharTo(cv,{...app.cfg,hairStyle:HAIR_STYLES[i].id},{focusHead:true}); }); }
-function refreshOutfitThumbs(app){
-  const {cfg}=app; const og=$('#outfit-grid'); og.innerHTML='';
-  OUTFITS.forEach(o=>{
-    const btn=document.createElement('button'); btn.className='thumb'+(cfg.outfit===o.id?' selected':'');
-    if(o.image){
-      const img=document.createElement('img'); img.src=o.image; img.alt=o.name; img.className='thumb-img'; btn.appendChild(img);
-    } else {
-      const cv=document.createElement('canvas'); cv.width=130; cv.height=150; btn.appendChild(cv);
-      renderCharTo(cv, {...cfg, outfit:o.id, outfitColor:o.color}, {focusHead:false});
-    }
-    const lb=document.createElement('span'); lb.className='thumb-label'; lb.textContent=o.name; btn.appendChild(lb);
-    btn.onclick=()=>{ cfg.outfit=o.id; cfg.outfitColor=o.color; cfg.assetKind='outfit'; cfg.assetImage=o.stage; $('#outfit-color').value=o.color; app.updateChar(); refreshOutfitThumbs(app); markApplied(app,'服装已更新'); };
-    og.appendChild(btn);
-  });
-}
-function buildSwatches(wrap, colors, active, onPick){ wrap.innerHTML=''; colors.forEach(item=>{ const c=typeof item==='string'?item:item.color; const s=document.createElement('button'); s.type='button'; s.className='swatch'+(c.toLowerCase()===String(active).toLowerCase()?' selected':''); s.style.background=c; if(item.thumb){ s.style.backgroundImage=`url("${item.thumb}")`; s.style.backgroundSize='cover'; s.style.backgroundPosition='center'; s.title=item.name; } s.onclick=()=>{ $$('.swatch',wrap).forEach(x=>x.classList.remove('selected')); s.classList.add('selected'); onPick(c,item); }; wrap.appendChild(s); }); }
+
 function refreshSelected(wrap, active){ $$('.thumb',wrap).forEach(t=>t.classList.remove('selected')); active.classList.add('selected'); }
 function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoji').textContent='✨'; if(app.scene) app.scene.playReaction('happy'); }
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
-  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/character/thumbs/scene_stage.png'},
-  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/character/thumbs/scene_cafe.png'},
-  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/character/thumbs/scene_bedroom.png'},
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803'},
 ];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
@@ -148,7 +112,7 @@ export function awardAffinity(app, n, _silent){
   cfg.affinity=Math.min(100, before+n);
   updateAffinity(app);
   // 里程碑
-  for(const at of [20,50,80,100]){ if(before<at && cfg.affinity>=at){ const t=milestoneText(at,cfg); if(t){ setTimeout(()=>app.bubble(t,'happy'),400);} if(at===100){ cfg.unlocked=true; refreshOutfitThumbs(app); } } }
+  for(const at of [20,50,80,100]){ if(before<at && cfg.affinity>=at){ const t=milestoneText(at,cfg); if(t){ setTimeout(()=>app.bubble(t,'happy'),400);} if(at===100){ cfg.unlocked=true; } } }
   app.save();
 }
 
