@@ -3,7 +3,7 @@
 // 音色目标：真人感 · 活泼运动少女音（优选微软/谷歌中文女声，rate/pitch 上扬）
 // v2: 真人语音包（assets/voice/yui/）优先播放，无对应 MP3 时回退 Web Speech TTS
 
-const VOICE_PACK_V = 'r2d5-20260803i';
+const VOICE_PACK_V = 'r2d5-20260803j';
 const VOICE_BASE = 'assets/voice/yui/';
 
 export class Voice {
@@ -32,6 +32,7 @@ export class Voice {
     // === 真人语音包 ===
     this._mp3Map = null;       // emotion→[{file,text}] 映射
     this._mp3Greet = null;     // greet→[{file,text}]
+    this._warmList = [];       // warm→[{file,text}] 成熟贴心陪伴语音
     this._mp3Ready = false;
     this._currentAudio = null; // 正在播放的 HTMLAudioElement（并发控制）
     this._loadManifest();
@@ -49,6 +50,7 @@ export class Voice {
           });
         }
         this._mp3Greet = Array.isArray(data.greet) ? data.greet : [];
+        this._warmList = Array.isArray(data.warm) ? data.warm : [];
         this._mp3Ready = true;
       })
       .catch(() => { this._mp3Ready = false; });
@@ -72,6 +74,21 @@ export class Voice {
     return { playing: true, text: clip.text || '' };
   }
 
+  _playMp3Warm() {
+    if (!this._mp3Ready || !this._warmList || !this._warmList.length) return { playing: false };
+    const clip = this._warmList[Math.floor(Math.random() * this._warmList.length)];
+    this._doPlayMp3(clip.file);
+    return { playing: true, text: clip.text || '' };
+  }
+
+  isOutputActive() {
+    return !!this._currentAudio || !!(this.synth && this.synth.speaking);
+  }
+
+  _canStartNewVoice() {
+    return !this.isOutputActive();
+  }
+
   _doPlayMp3(file) {
     // 并发控制：停掉正在播的
     this._stopMp3();
@@ -85,7 +102,7 @@ export class Voice {
 
   _stopMp3() {
     if (this._currentAudio) {
-      try { this._currentAudio.pause(); this._currentAudio.currentTime = 0; } catch (e) {}
+      try { this._currentAudio.pause(); this._currentAudio.currentTime = 0; } catch {}
       this._currentAudio = null;
     }
   }
@@ -103,12 +120,25 @@ export class Voice {
     return '';
   }
 
-  // greet 专用
+  // greet 专用：约 35% 使用 warm，形成更成熟贴心的问候
   speakGreet() {
-    if (!this.app.cfg.voiceOutput) return '';
+    if (!this.app.cfg.voiceOutput || !this._canStartNewVoice()) return '';
     this._stopMp3();
     this.stopSpeak();
-    const res = this._playMp3Greet();
+    const preferWarm = Math.random() < 0.35;
+    const first = preferWarm ? this._playMp3Warm() : this._playMp3Greet();
+    if (first.playing) return first.text;
+    const fallback = preferWarm ? this._playMp3Greet() : this._playMp3Warm();
+    if (fallback.playing) return fallback.text;
+    return '';
+  }
+
+  // warm 专用：缺失/加载失败静默跳过；默认不打断正在播放的语音，避免叠音和刷屏
+  speakWarm() {
+    if (!this.app.cfg.voiceOutput || !this._canStartNewVoice()) return '';
+    this._stopMp3();
+    this.stopSpeak();
+    const res = this._playMp3Warm();
     if (res.playing) return res.text;
     return '';
   }
@@ -200,9 +230,9 @@ export class Voice {
       this._stop();
       u.onend = () => { if (wasWake && this.app.cfg.wakeEnabled) this.startWake(); };
       this.synth.speak(u);
-    } catch (e) {}
+    } catch {}
   }
-  stopSpeak() { try { this.synth && this.synth.cancel(); } catch (e) {} }
+  stopSpeak() { try { this.synth && this.synth.cancel(); } catch {} }
 
   // 停止所有语音输出（MP3 + TTS）
   stopAllAudio() {
@@ -232,9 +262,9 @@ export class Voice {
   }
   _safeStart() {
     if (this.running || !this.rec) return;
-    try { this.rec.start(); this.running = true; } catch (e) { /* already started */ }
+    try { this.rec.start(); this.running = true; } catch { /* already started */ }
   }
-  _stop() { if (this.rec && this.running) { try { this.rec.stop(); } catch (e) {} } this.running = false; }
+  _stop() { if (this.rec && this.running) { try { this.rec.stop(); } catch {} } this.running = false; }
 
   _onFinal(text) {
     const wake = (this.app.cfg.wakeWord || '').trim().toLowerCase();

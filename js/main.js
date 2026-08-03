@@ -1,5 +1,5 @@
 // main.js — 启动与编排
-import { Scene3D } from './stage2d.js?v=r2d5-20260803i';
+import { Scene3D } from './stage2d.js?v=r2d5-20260803j';
 import * as Store from './store.js';
 import * as UI from './ui.js';
 import { RhythmGame } from './rhythm.js';
@@ -9,7 +9,15 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 class App {
-  constructor() { this.cfg = null; this.scene = null; this._bubbleEl = null; }
+  constructor() {
+    this.cfg = null;
+    this.scene = null;
+    this._bubbleEl = null;
+    this._idleTimer = 0;
+    this._lastWarmAt = 0;
+    this._onUserActivity = () => this.resetIdleWarmTimer();
+    this._onVisibilityChange = () => this.handleVisibilityChange();
+  }
 
   save() { Store.save(this.cfg); }
   updateChar() { if (this.scene) { this.scene.cfg = this.cfg; this.scene.redrawCharacter(); } this.save(); }
@@ -17,6 +25,56 @@ class App {
   bubble(text, react, opts = {}) {
     UI.showBubble(this, text, react, { skipSceneReaction: !!opts.skipSceneReaction });
     if (this.voice && !opts.silentVoice) this.voice.speak(text);
+  }
+
+  playGreeting() {
+    if (!this.voice) return false;
+    const text = this.voice.speakGreet();
+    if (!text) return false;
+    this.bubble(text, 'wave', { silentVoice: true });
+    this._lastWarmAt = Date.now();
+    return true;
+  }
+
+  playWarmCompanion(source = 'idle') {
+    if (!this.voice || document.hidden) return false;
+    if (this.voice.isOutputActive && this.voice.isOutputActive()) return false;
+    const now = Date.now();
+    const minGap = source === 'idle' ? 45000 : 20000;
+    if (now - this._lastWarmAt < minGap) return false;
+    const text = this.voice.speakWarm();
+    if (!text) return false;
+    this._lastWarmAt = now;
+    this.bubble(text, 'gentle', { silentVoice: true });
+    return true;
+  }
+
+  resetIdleWarmTimer() {
+    if (!this.voice) return;
+    if (this._idleTimer) clearTimeout(this._idleTimer);
+    if (document.hidden) return;
+    const delay = 25000 + Math.floor(Math.random() * 20000);
+    this._idleTimer = setTimeout(() => {
+      this.playWarmCompanion('idle');
+      this.resetIdleWarmTimer();
+    }, delay);
+  }
+
+  handleVisibilityChange() {
+    if (document.hidden) {
+      if (this._idleTimer) clearTimeout(this._idleTimer);
+      this._idleTimer = 0;
+      return;
+    }
+    this.resetIdleWarmTimer();
+  }
+
+  bindIdleWarmTriggers() {
+    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(type => {
+      window.addEventListener(type, this._onUserActivity, { passive: true });
+    });
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
+    this.resetIdleWarmTimer();
   }
 
   // 用户输入（文字或语音）统一入口
@@ -73,7 +131,9 @@ class App {
       this.save();
       cr.classList.add('hidden');
       this.enterStage();
-      setTimeout(() => this.bubble(`我是 ${cfg.aiName}，从今往后由我陪着${cfg.callName}。`, 'wave'), 700);
+      setTimeout(() => {
+        if (!this.playGreeting()) this.bubble(`我是 ${cfg.aiName}，从今往后由我陪着${cfg.callName}。`, 'wave');
+      }, 700);
     };
   }
 
@@ -109,6 +169,8 @@ class App {
     };
     UI.buildSettingsPanel(this);
     if (this.cfg.wakeEnabled) this.voice.startWake();
+    setTimeout(() => this.playGreeting(), 700);
+    this.bindIdleWarmTriggers();
 
     UI.updateAffinity(this, this.cfg.affinity >= 100 ? '好感已满 · 感谢陪伴✨' : '点击 TA 或聊天可提升好感');
     this.bindHud();
