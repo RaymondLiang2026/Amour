@@ -64,22 +64,24 @@ function taperStrand(ctx, pts, w0, w1, color, alpha){
 
 /* ---------- 预设库 ---------- */
 export const HAIR_STYLES = [
-  {id:'long_wavy', name:'栗棕长卷'},
-  {id:'bob',       name:'齐肩短发'},
-  {id:'ponytail',  name:'高马尾'},
-  {id:'short',     name:'利落短发'},
+  {id:'long_wavy', name:'栗棕长卷', thumb:'assets/character/thumbs/hair_long_wavy.png'},
+  {id:'bob',       name:'齐肩短发', thumb:'assets/character/thumbs/hair_bob.png'},
+  {id:'ponytail',  name:'高马尾',   thumb:'assets/character/thumbs/hair_ponytail.png'},
+  {id:'short',     name:'利落短发', thumb:'assets/character/thumbs/hair_short.png'},
 ];
 export const OUTFITS = [
   {id:'base',    name:'基础',   color:'#FDFDFD', image:'assets/character/builtin/bi_01_base.png'},
   {id:'academy', name:'学院风', color:'#3b5a8c', image:'assets/character/builtin/bi_06_academy.png'},
   {id:'coat',    name:'都市风衣',color:'#707070', image:'assets/character/builtin/bi_07_urban.png'},
+  {id:'hoodie',  name:'休闲卫衣',color:'#e8e0d4', image:'assets/character/thumbs/outfit_hoodie.png'},
+  {id:'tee',     name:'运动短袖',color:'#f2f2f2', image:'assets/character/thumbs/outfit_tee.png'},
 ];
 export const ACCESSORIES = [
   {id:'glasses', name:'眼镜', icon:'👓'},
   {id:'hairpin', name:'发饰', icon:'🌸'},
   {id:'tie',     name:'领带', icon:'👔'},
 ];
-export const HAIR_SWATCHES = ['#2D2926','#6b4a2f','#3a2418','#12100f','#c9a25e','#8a4b3a','#b56b8f','#5566a0'];
+export const HAIR_SWATCHES = ['#2D2926','#6b4a2f','#3a2418','#c9a25e','#8a4b3a','#b56b8f'];
 export const EYE_SWATCHES  = ['#3E2723','#5a3a24','#7a4a2a','#3a6b5a','#2f5c8a','#6a3a6a','#8a6a2a','#455063'];
 
 const SKIN = {base:'#f6ddc7', shadow:'#e7b79a', deep:'#d99a7e', blush:'#f0a68f', hi:'#fff4e9'};

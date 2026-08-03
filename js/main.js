@@ -18,6 +18,12 @@ class App{
   // 用户输入（文字或语音）统一入口
   handleUserText(text, fromVoice){
     if(!text) return;
+    // —— 镜头缩放指令解析（对话框指令）——
+    const t=text.trim();
+    const zoomIn = /^(拉近|靠近|近一点|近一些|zoom in)/i.test(t);
+    const zoomOut = /^(拉远|退后|远一点|远一些|zoom out)/i.test(t);
+    if(zoomIn && this.scene){ this.scene.zoomBy(-0.9); this.bubble('好，我靠近一点～', 'happy'); return; }
+    if(zoomOut && this.scene){ this.scene.zoomBy(0.9); this.bubble('好，我退后一点～', 'happy'); return; }
     const r=UI.replyFor(text, this.cfg);
     this.bubble(r.text, r.react);
     UI.awardAffinity(this, 1);

@@ -15,6 +15,7 @@ export function defaultConfig(){
     theme: 'stage',
     light: 'warm',
     daynight: 62,
+    walkEnabled: true,   // 角色场景内走动
     props: [],           // [{type, x, z, rot}]
     // 进度
     affinity: 0,
@@ -23,7 +24,7 @@ export function defaultConfig(){
     // 语音交互
     voiceOutput: true,
     voiceGender: 'female',
-    speechRate: 1.0,
+    speechRate: 1.1,
     wakeWord: 'Yui',
     wakeEnabled: false,
   };
@@ -36,7 +37,8 @@ function normalizeSave(data){
   safe.aiName = safe.aiName === legacyName ? 'Yui' : (safe.aiName || 'Yui');
   safe.voiceGender = 'female';
   safe.wakeWord = !safe.wakeWord || safe.wakeWord === legacyName ? safe.aiName : safe.wakeWord;
-  safe.outfit = safe.outfit === 'casual' || safe.outfit === 'academy' ? 'base' : (safe.outfit || 'base');
+  const validOutfits = ['base','academy','coat','hoodie','tee'];
+  safe.outfit = validOutfits.includes(safe.outfit) ? safe.outfit : 'base';
   safe.outfitColor = safe.outfitColor || '#FDFDFD';
   safe.accessories = Object.assign({ glasses:false, hairpin:true, tie:false }, safe.accessories || {});
   return safe;

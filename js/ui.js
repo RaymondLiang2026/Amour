@@ -25,14 +25,18 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
 /* ---------- 构建外观面板 ---------- */
 export function buildAppearancePanel(app){
   const {cfg}=app;
-  // 发型
+  // 发型（使用锁脸缩略图，脸部与参考图一致）
   const hg=$('#hair-grid'); hg.innerHTML='';
   HAIR_STYLES.forEach(h=>{
     const btn=document.createElement('button'); btn.className='thumb'+(cfg.hairStyle===h.id?' selected':'');
-    const cv=document.createElement('canvas'); cv.width=130; cv.height=150; btn.appendChild(cv);
+    if(h.thumb){
+      const img=document.createElement('img'); img.src=h.thumb; img.alt=h.name; img.className='thumb-img'; btn.appendChild(img);
+    } else {
+      const cv=document.createElement('canvas'); cv.width=130; cv.height=150; btn.appendChild(cv);
+      renderCharTo(cv, {...cfg, hairStyle:h.id}, {focusHead:true});
+    }
     const lb=document.createElement('span'); lb.className='thumb-label'; lb.textContent=h.name; btn.appendChild(lb);
-    renderCharTo(cv, {...cfg, hairStyle:h.id}, {focusHead:true});
-    btn.onclick=()=>{ cfg.hairStyle=h.id; app.updateChar(); refreshSelected(hg,btn); refreshOutfitThumbs(app); refreshHairThumbs(app); };
+    btn.onclick=()=>{ cfg.hairStyle=h.id; app.updateChar(); refreshSelected(hg,btn); };
     hg.appendChild(btn);
   });
   // 发色
@@ -53,7 +57,7 @@ export function buildAppearancePanel(app){
     ag.appendChild(chip);
   });
 }
-function refreshHairThumbs(app){ const hg=$('#hair-grid'); if(!hg) return; $$('.thumb',hg).forEach((btn,i)=>{ const cv=$('canvas',btn); renderCharTo(cv,{...app.cfg,hairStyle:HAIR_STYLES[i].id},{focusHead:true}); }); }
+function refreshHairThumbs(app){ const hg=$('#hair-grid'); if(!hg) return; $$('.thumb',hg).forEach((btn,i)=>{ const cv=$('canvas',btn); if(cv) renderCharTo(cv,{...app.cfg,hairStyle:HAIR_STYLES[i].id},{focusHead:true}); }); }
 function refreshOutfitThumbs(app){
   const {cfg}=app; const og=$('#outfit-grid'); og.innerHTML='';
   OUTFITS.forEach(o=>{
@@ -73,12 +77,16 @@ function buildSwatches(wrap, colors, onPick){ wrap.innerHTML=''; colors.forEach(
 function refreshSelected(wrap, active){ $$('.thumb',wrap).forEach(t=>t.classList.remove('selected')); active.classList.add('selected'); }
 
 /* ---------- 场景面板 ---------- */
-const THEMES=[{id:'stage',name:'舞台',e:'🎭'},{id:'cafe',name:'咖啡馆',e:'☕'},{id:'bedroom',name:'卧室',e:'🛏️'}];
+const THEMES=[
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/character/thumbs/scene_stage.png'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/character/thumbs/scene_cafe.png'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/character/thumbs/scene_bedroom.png'},
+];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
   THEMES.forEach(t=>{
     const btn=document.createElement('button'); btn.className='thumb'+(cfg.theme===t.id?' selected':'');
-    btn.style.aspectRatio='1.2'; btn.innerHTML=`<div style="height:96px;display:flex;align-items:center;justify-content:center;font-size:40px;background:${themeBg(t.id)}">${t.e}</div><span class="thumb-label">${t.name}</span>`;
+    btn.innerHTML=`<img src="${t.thumb}" alt="${t.name}" class="thumb-img"><span class="thumb-emoji">${t.e}</span><span class="thumb-label">${t.name}</span>`;
     btn.onclick=()=>{ cfg.theme=t.id; app.scene.applyTheme(t.id); refreshSelected(tg,btn); app.save(); };
     tg.appendChild(btn);
   });
@@ -86,6 +94,8 @@ export function buildScenePanel(app){
   const dn=$('#daynight'); dn.value=cfg.daynight; setDayLabel(cfg.daynight);
   dn.oninput=(e)=>{ const v=+e.target.value; cfg.daynight=v; app.scene.setDayNight(v); setDayLabel(v); };
   dn.onchange=()=>app.save();
+  // 走动开关
+  const wk=$('#set-walk'); if(wk){ wk.checked=(cfg.walkEnabled!==false); wk.onchange=()=>{ cfg.walkEnabled=wk.checked; app.scene.setWalkEnabled(wk.checked); app.save(); }; }
 }
 function themeBg(id){ return id==='cafe'?'linear-gradient(160deg,#5a3d24,#2e2015)':id==='bedroom'?'linear-gradient(160deg,#5a4a6a,#332a44)':'radial-gradient(circle,#5a3320,#160d08)'; }
 function setDayLabel(v){ $('#daynight-val').textContent = v<25?'夜晚':v<45?'黄昏':v<70?'正午':'白昼'; }

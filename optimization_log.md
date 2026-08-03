@@ -123,3 +123,59 @@
 
 ### 部署 URL
 https://44a4a1016894.aime-app.bytedance.net
+
+
+---
+
+## 第三轮迭代总结（2026-08-03）
+
+**目标**：语音优化 + 左侧面板 UI 翻新 + 角色场景内走动 + 对话框镜头缩放指令，全程脸模锁死。
+
+### A. 语音方案（js/voice.js）
+- **引擎**：Web Speech API（`speechSynthesis`），不引入外部 secret / 外网 TTS。
+- **音色优选**：名称优先级 `Xiaoxiao → Xiaoyi → Yaoyao → 云希 → 晓晓 → Google 普通话 → Chinese Female`，兜底中文女声。
+- **参数**：`rate 1.10`（store 默认同步为 1.1）、`pitch 1.10`、`volume 1.0`。
+- **语气处理**（`_prosody`）：句末无标点时追加"～"上扬；文本含"！"时 pitch +0.05（→1.15）。
+- **首次朗读前等待**：构造 `_voicesReady` Promise，监听 `voiceschanged`，1.2s 兜底 resolve，避免初始 voice list 为空。
+- 沙箱 headless 无系统语音（voiceCount=0），真实浏览器可命中微软/谷歌女声；`_prosody`/rate/pitch 逻辑已 playwright 验证通过。
+
+### B. UI 面板翻新（css/style.css + js/ui.js + index.html）
+- **设计令牌**：`--panel-a/#3a2a1e → --panel-b/#5a3f2a`（0.88 半透明渐变）、`--panel-radius 20px`、边框 `1px solid rgba(212,165,90,.35)`；卡片 `--card-bg rgba(30,20,12,.55)`/`--card-radius 14px`；选中态 `2px solid #d4a55a` + `box-shadow 0 0 12px rgba(212,165,90,.6)`；文字 `--title #f0d089`(加粗)/`--subtitle #c9a679`/`--body #e8d5a8`。
+- **应用范围**：`.side-panel / .panel-head / .thumb(.selected) / .chip(.selected) / .light-btn / .voice-btn / .slider / .swatch / .switch`。
+- **内容**：外观（4 发型 grid + 6 发色圆点 + 5 服装 grid + 配饰）、场景（3 主题卡片 + 昼夜滑块 + 暖/冷光 + 走动开关）、道具、合奏、设置，全部保留旧功能，`store.js/character.js` API 兼容。
+
+### C. 缩略图（脸模锁死）
+均以 `facecut/front.png` 为参考图 image_edit，严格保脸只改发型/服装，逐张 analyze_image 对比 `ref_small_analyze.jpg`：
+
+| 缩略图 | 类型 | face_similarity |
+|--------|------|----------------:|
+| hair_long_wavy（栗棕长卷） | 发型 | 95 |
+| hair_bob（齐肩短发） | 发型 | 94 |
+| hair_ponytail（高马尾） | 发型 | 95 |
+| hair_short（利落短发） | 发型 | 94 |
+| outfit_hoodie（休闲卫衣） | 服装 | 96 |
+| outfit_tee（运动短袖） | 服装 | 96 |
+
+- 全部 ≥90 一次通过，无需重生或退回滤镜方案。
+- 发色 6 色：纯 CSS 圆点，不生图。
+- 场景缩略图（无人物，裁剪）：scene_stage（apartment_warm）、scene_bedroom（apartment_warm + 冷调）、scene_cafe（新生成的纯咖啡馆背景，无人物）。
+- 全部输出 `assets/character/thumbs/`，发型/服装 200×280、场景 200×200。
+
+### D. 走动 & 镜头缩放（js/scene3d.js + js/main.js）
+- **走动**（`_loop`）：`walkPhase += dt*0.35*walkDir`；`walkX = sin(walkPhase)*1.4 + sin(walkPhase*0.31)*0.3`；`|walkX|>2.5` 反向；速度 `dxdt>0.02` 看右、`<-0.02` 看左，`walkLook(±24°)` **叠加**到 `targetAngle = aim.x*90 + walkLook`（不覆盖视差）；脚步颠簸 `sin(walkPhase*4)*0.015` 叠加到 `position.y`；开关 `setWalkEnabled`（场景面板 toggle，默认开）。
+- **镜头缩放**：新增 `camTargetZ`（初始 = camBase.z 7.6）与 `zoomBy(dz)`（clamp z∈[4.5,11.5]）；`_loop` 中 `camera.position.z = lerp(z, camTargetZ, 0.08)`（≈1s 平滑）。`main.js:handleUserText` 最前解析 `拉近/靠近/近一点|zoom in → zoomBy(-0.9)`、`拉远/退后/远一点|zoom out → zoomBy(0.9)`。
+- 仅**新增** `zoomBy`/`setWalkEnabled`，redrawCharacter/applyLight/applyTheme/setDayNight/playReaction/playTalk/addProp/clearProps/headScreen 等原接口完整保留（playwright 验证 10/10 存在）。
+
+### 验证（playwright headless SwiftShader）
+- 缩放：z 7.6 → 拉近 6.7 → 拉远×2 8.5 ✅
+- 走动：walkEnabled=true、phase 递进、position.x 变化、walkLook 生效 ✅
+- 缩略图：发型 4/4、服装 5/5、场景 3/3 全部加载成功 ✅
+- 控制台 0 error ✅
+
+### 遗留瑕疵（可接受）
+- 沙箱无系统 TTS 语音，无法在此环境打印真实 voice.name（真实 Chrome/Edge 可命中晓晓/云希等）。
+- 面板打开时覆盖左侧工具条（沿用前两轮交互，通过 ✕ 关闭切换），非本轮回归。
+- SwiftShader ~15fps，真实浏览器 60fps。
+
+### 部署 URL
+https://44a4a1016894.aime-app.bytedance.net

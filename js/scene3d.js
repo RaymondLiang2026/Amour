@@ -49,6 +49,12 @@ export class Scene3D {
     this.currentViewAngle = 0; // 平滑角度
     this.blinkTimer = 2.6 + Math.random() * 2.4; this.blinkPhase = 0; // s / 0..1
     this.talkPulse = 0;
+    // —— 场景内走动 —— //
+    this.walkPhase = Math.random() * Math.PI * 2; // 走动相位
+    this.walkT = 0;              // 走动周期计数
+    this.walkEnabled = (cfg.walkEnabled !== false); // 默认开启
+    this.walkDir = 1;            // 边界反向
+    this.prevWalkX = 0;          // 上一帧 x（估算走动速度）
     this._initRenderer(); this._initScene(); this._initEnvAndLights();
     this._initCharacter();
     this._grabBgLayers();
@@ -74,6 +80,7 @@ export class Scene3D {
     this.camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 60);
     this.camTarget = new THREE.Vector3(0, 0, 0);
     this.camBase = new THREE.Vector3(0, 0, 7.6);
+    this.camTargetZ = this.camBase.z;   // 镜头缩放目标 z（zoomBy 控制）
     this.camera.position.copy(this.camBase);
     this.camera.lookAt(this.camTarget);
     this.propsGroup = new THREE.Group();
@@ -231,6 +238,9 @@ export class Scene3D {
   redrawCharacter() { this.applyLight(this.cfg.light); }
   playReaction(type) { this.reaction = type; this.reactionT = 1.2; }
   playTalk() { this.talkT = 1.4; }
+  // 镜头缩放：dz<0 拉近、dz>0 拉远；z 限制在 [4.5, 11.5]，_loop 中平滑 lerp
+  zoomBy(dz) { this.camTargetZ = clamp(this.camTargetZ + dz, 4.5, 11.5); }
+  setWalkEnabled(on) { this.walkEnabled = !!on; if (this.cfg) this.cfg.walkEnabled = this.walkEnabled; }
 
   addProp(type, data = null, silent = false) {
     const g = buildProp(type); if (!g) return;
@@ -306,8 +316,30 @@ export class Scene3D {
     this.aim.y = lerp(this.aim.y, this.mouse.y, 0.22);
 
     if (this.modelReady) {
-      // 目标视角角度: 鼠标最边缘 → 90°(与 stops 端点对齐, 无 mix 残留)
-      const targetAngle = this.aim.x * 90;
+      // —— 场景内走动：正弦主频 + 低频扰动 = 自然游走 —— //
+      if (this.walkEnabled) {
+        this.walkPhase += dt * 0.35 * this.walkDir;   // 走动频率约 0.35 rad/s
+        this.walkT += dt;
+        const walkX = Math.sin(this.walkPhase) * 1.4 + Math.sin(this.walkPhase * 0.31) * 0.3;
+        if (Math.abs(walkX) > 2.5) this.walkDir *= -1;  // 边界反向
+        const dxdt = (walkX - this.prevWalkX) / Math.max(dt, 1e-3);
+        this.prevWalkX = walkX;
+        // 走动方向决定看向：向右走(dxdt>0.02)看右、向左走(dxdt<-0.02)看左
+        let walkLook = 0;
+        if (dxdt > 0.02) walkLook = clamp(dxdt * 8, 0, 24);
+        else if (dxdt < -0.02) walkLook = clamp(dxdt * 8, -24, 0);
+        this._walkLook = lerp(this._walkLook || 0, walkLook, 0.12);
+        // 脚步颠簸：频率 = 走动主频 × 4，振幅 0.015
+        this._stepBob = Math.sin(this.walkPhase * 4) * 0.015 * Math.min(1, Math.abs(dxdt) * 2);
+        this._walkX = walkX;
+      } else {
+        this._walkX = lerp(this._walkX || 0, 0, 0.05);
+        this._walkLook = lerp(this._walkLook || 0, 0, 0.12);
+        this._stepBob = 0;
+      }
+
+      // 目标视角角度: 鼠标最边缘 → 90°(与 stops 端点对齐, 无 mix 残留)；叠加走动看向
+      const targetAngle = clamp(this.aim.x * 90 + (this._walkLook || 0), -90, 90);
       this.currentViewAngle = lerp(this.currentViewAngle, targetAngle, 0.35);
       const { a, b, t: mix } = this._pickViews(this.currentViewAngle);
 
@@ -319,16 +351,16 @@ export class Scene3D {
       const m = clamp((mix - 0.4) / 0.2, 0, 1);
       u.uMix.value = m * m * (3 - 2 * m);
 
-      // 呼吸: Y 位移 + 缩放
+      // 呼吸: Y 位移 + 缩放（叠加走动脚步颠簸）
       const breath = Math.sin(t * Math.PI * 2 / 4);
       const sway = Math.sin(t * 0.5);
-      this.character.position.y = -0.02 + breath * 0.018;
+      this.character.position.y = -0.02 + breath * 0.018 + (this._stepBob || 0);
       this.character.scale.y = 1 + breath * 0.005;
       this.character.scale.x = 1 - breath * 0.002;
       // 头部/身体轻旋转 (跟随鼠标 Y)
       this.character.rotation.x = -this.aim.y * 0.05 + sway * 0.008;
-      // 水平微视差：Plane 组随 aim.x 位移 (视角切换外的额外视差)
-      this.character.position.x = this.aim.x * 0.05;
+      // 水平位移：鼠标视差 + 场景内走动（叠加，不覆盖）
+      this.character.position.x = this.aim.x * 0.05 + (this._walkX || 0);
       // Plane 微倾斜制造立体感 (Y 轴旋转 - 与视角切换协同)
       this.character.rotation.y = -this.aim.x * 0.04;
 
@@ -359,9 +391,11 @@ export class Scene3D {
       this.character.position.y += this.talkPulse * 0.005;
     }
 
-    // 相机透视（鼠标视差）
+    // 相机透视（鼠标视差）+ 镜头缩放平滑过渡
     this.camera.position.x = this.aim.x * 0.10 + Math.sin(t * 0.3) * 0.008;
     this.camera.position.y = -this.aim.y * 0.08;
+    // z 由 camTargetZ 主导（zoomBy 控制），lerp 0.08 ≈ 1s 平滑到位
+    this.camera.position.z = lerp(this.camera.position.z, this.camTargetZ, 0.08);
     this.camera.lookAt(this.camTarget);
 
     // 背景视差 + 光晕呼吸

@@ -1,5 +1,6 @@
 // voice.js — 浏览器原生语音交互（Web Speech API），不依赖任何外部服务
 // 语音输入 SpeechRecognition + 语音输出 SpeechSynthesis + 唤醒词
+// 音色目标：真人感 · 活泼运动少女音（优选微软/谷歌中文女声，rate/pitch 上扬）
 export class Voice{
   constructor(app){
     this.app=app;
@@ -12,36 +13,79 @@ export class Voice{
     this.running=false;        // 识别器是否运行中
     this.armedUntil=0;         // 听到唤醒词后进入 listen 的时间窗
     this.onState=null;         // 状态回调（更新 UI）
-    if(this.ttsSupported){ this._loadVoices(); this.synth.onvoiceschanged=()=>this._loadVoices(); }
+    this._pickedVoice=null;    // 缓存已选中的女声
+    // 首次 speak 前必须等 voiceschanged（部分浏览器初始 voice list 为空）
+    this._voicesReady = new Promise((resolve)=>{ this._resolveVoices=resolve; });
+    if(this.ttsSupported){
+      this._loadVoices();
+      this.synth.onvoiceschanged=()=>this._loadVoices();
+      // 兜底：1.2s 后即使没有 voiceschanged 也放行（避免永久 pending）
+      setTimeout(()=>this._resolveVoices&&this._resolveVoices(), 1200);
+    } else { this._resolveVoices&&this._resolveVoices(); }
     if(this.srSupported){ this._initRec(); }
   }
 
-  _loadVoices(){ this.voices=this.synth.getVoices()||[]; }
+  _loadVoices(){
+    this.voices=this.synth.getVoices()||[];
+    if(this.voices.length){
+      this._pickedVoice=this._pickVoice();
+      if(this._resolveVoices){ this._resolveVoices(); this._resolveVoices=null; }
+    }
+  }
 
   /* ---------- 语音输出 ---------- */
+  // 优选真人感活泼少女中文女声
   _pickVoice(){
-    const zh=this.voices.filter(v=>/zh|cmn|chinese/i.test(v.lang+v.name));
-    const pool = zh.length?zh:this.voices;
-    if(!pool.length) return null;
-    const femKey=/female|women|woman|婷|美|Mei|Ting|Xiaoxiao|Yaoyao|Huihui|Google 普通话/i;
+    const list=this.voices;
+    if(!list.length) return null;
+    // 1) 名称优先级（活泼真人女声）
+    const preferred=[/xiaoxiao/i,/xiaoyi/i,/yaoyao/i,/云希/,/晓晓/,/google\s*普通话/i,/chinese\s*female/i];
+    for(const re of preferred){
+      const hit=list.find(v=>re.test(v.name));
+      if(hit) return hit;
+    }
+    // 2) 中文女声兜底
+    const zh=list.filter(v=>/zh|cmn|chinese/i.test(v.lang+' '+v.name));
+    const pool=zh.length?zh:list;
+    const femKey=/female|women|woman|婷|美|Mei|Ting|Xiao|Yao|Hui|Google 普通话/i;
     return pool.find(v=>femKey.test(v.name)) || pool[0];
   }
+
+  // 语气处理：句末无标点补"～"上扬；含"！"轻微提升 pitch
+  _prosody(text){
+    let t=(text||'').replace(/[✨🎵🎭💗🔒👗🌸☕🛏️🪴]/g,'').trim();
+    let pitch=1.10;
+    if(/！|!/.test(t)) pitch+=0.05;
+    // 句末若无标点，补一个上扬"～"
+    if(t && !/[～~。.!！?？,，、;；:：]$/.test(t)) t+='～';
+    return {text:t, pitch};
+  }
+
   speak(text){
+    if(!this.ttsSupported || !this.app.cfg.voiceOutput || !text) return;
+    // 首次调用等待 voices 就绪，再朗读
+    this._voicesReady.then(()=>this._doSpeak(text));
+  }
+  _doSpeak(text){
     if(!this.ttsSupported || !this.app.cfg.voiceOutput || !text) return;
     try{
       this.synth.cancel();
-      const u=new SpeechSynthesisUtterance(text.replace(/[✨🎵🎭💗🔒👗🌸☕🛏️🪴]/g,''));
-      const v=this._pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang='zh-CN';
-      u.rate=this.app.cfg.speechRate||1.0;
-      u.pitch = 1.2;
+      const {text:say, pitch}=this._prosody(text);
+      if(!say) return;
+      const u=new SpeechSynthesisUtterance(say);
+      const v=this._pickedVoice||this._pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang='zh-CN';
+      // 活泼运动少女音：语速略快、音调上扬、满音量
+      u.rate = (this.app.cfg.speechRate||1.10);
+      u.pitch = pitch;   // 基准 1.10，含"！"时 1.15
+      u.volume = 1.0;
       // 朗读期间暂停识别，避免自我回声
       const wasWake=this.mode==='wake';
       this._stop();
       u.onend=()=>{ if(wasWake && this.app.cfg.wakeEnabled) this.startWake(); };
       this.synth.speak(u);
-    }catch{}
+    }catch(e){}
   }
-  stopSpeak(){ try{ this.synth&&this.synth.cancel(); }catch{} }
+  stopSpeak(){ try{ this.synth&&this.synth.cancel(); }catch(e){} }
 
   /* ---------- 语音识别 ---------- */
   _initRec(){
@@ -65,9 +109,9 @@ export class Voice{
   }
   _safeStart(){
     if(this.running || !this.rec) return;
-    try{ this.rec.start(); this.running=true; }catch{ /* already started */ }
+    try{ this.rec.start(); this.running=true; }catch(e){ /* already started */ }
   }
-  _stop(){ if(this.rec && this.running){ try{ this.rec.stop(); }catch{} } this.running=false; }
+  _stop(){ if(this.rec && this.running){ try{ this.rec.stop(); }catch(e){} } this.running=false; }
 
   _onFinal(text){
     const wake=(this.app.cfg.wakeWord||'').trim().toLowerCase();
