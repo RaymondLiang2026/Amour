@@ -36,23 +36,15 @@ class App{
   /* ---- 创建流程 ---- */
   showCreation(){
     const cr=$('#creation'); cr.classList.remove('hidden');
-    UI.drawCreationPreviews((g)=>Store.defaultConfig(g));
-    let picked=null;
     const nameI=$('#input-name'), callI=$('#input-callname'), startB=$('#btn-start');
-    $$('.gender-card').forEach(card=>{
-      card.onclick=()=>{
-        picked=card.dataset.gender;
-        $$('.gender-card').forEach(c=>c.classList.remove('selected')); card.classList.add('selected');
-        const d=Store.defaultConfig(picked);
-        nameI.placeholder=d.aiName; callI.placeholder=d.callName;
-        startB.disabled=false; $('.hint').textContent='起个名字，或直接进入';
-      };
-    });
+    const base=Store.defaultConfig();
+    nameI.placeholder=base.aiName; callI.placeholder=base.callName;
+    startB.disabled=false;
     startB.onclick=()=>{
-      if(!picked) return;
-      const cfg=Store.defaultConfig(picked);
+      const cfg=Store.defaultConfig();
       cfg.aiName=(nameI.value.trim())||cfg.aiName;
       cfg.callName=(callI.value.trim())||cfg.callName;
+      cfg.wakeWord=cfg.aiName;
       cfg.createdAt=Date.now();
       this.cfg=cfg; this.save();
       cr.classList.add('hidden');

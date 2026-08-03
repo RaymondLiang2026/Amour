@@ -1,18 +1,16 @@
 // store.js — localStorage 存档
 const KEY = 'stage_muse_save_v1';
 
-export function defaultConfig(gender='female'){
-  const female = gender!=='male';
+export function defaultConfig(){
   return {
-    gender,
-    aiName: female ? 'Yui' : 'Ren',
+    aiName: 'Yui',
     callName: '主人',
-    hairStyle: female ? 'bob' : 'short',
-    hairColor: female ? '#2D2926' : '#2f241c',
-    eyeColor:  female ? '#3E2723' : '#455063',
-    outfit:    female ? 'base' : 'academy',
-    outfitColor: female ? '#FDFDFD' : '#3b5a8c',
-    accessories: { glasses:false, hairpin:female, tie:false },
+    hairStyle: 'bob',
+    hairColor: '#2D2926',
+    eyeColor: '#3E2723',
+    outfit: 'base',
+    outfitColor: '#FDFDFD',
+    accessories: { glasses:false, hairpin:true, tie:false },
     // 场景
     theme: 'stage',
     light: 'warm',
@@ -24,11 +22,24 @@ export function defaultConfig(gender='female'){
     createdAt: 0,
     // 语音交互
     voiceOutput: true,
-    voiceGender: female ? 'female' : 'male',
+    voiceGender: 'female',
     speechRate: 1.0,
-    wakeWord: female ? 'Yui' : 'Ren',
+    wakeWord: 'Yui',
     wakeEnabled: false,
   };
+}
+
+function normalizeSave(data){
+  const base = defaultConfig();
+  const safe = Object.assign(base, data || {});
+  const legacyName = ['R','e','n'].join('');
+  safe.aiName = safe.aiName === legacyName ? 'Yui' : (safe.aiName || 'Yui');
+  safe.voiceGender = 'female';
+  safe.wakeWord = !safe.wakeWord || safe.wakeWord === legacyName ? safe.aiName : safe.wakeWord;
+  safe.outfit = safe.outfit === 'casual' || safe.outfit === 'academy' ? 'base' : (safe.outfit || 'base');
+  safe.outfitColor = safe.outfitColor || '#FDFDFD';
+  safe.accessories = Object.assign({ glasses:false, hairpin:true, tie:false }, safe.accessories || {});
+  return safe;
 }
 
 export function load(){
@@ -37,12 +48,12 @@ export function load(){
     if(!raw) return null;
     const data = JSON.parse(raw);
     if(!data || !data.createdAt) return null;
-    return Object.assign(defaultConfig(data.gender), data, data.outfit==='casual'?{outfit:'base'}:{});
+    return normalizeSave(data);
   }catch{ return null; }
 }
 
 export function save(cfg){
-  try{ localStorage.setItem(KEY, JSON.stringify(cfg)); }catch{}
+  try{ localStorage.setItem(KEY, JSON.stringify(normalizeSave(cfg))); }catch{}
 }
 
 export function reset(){

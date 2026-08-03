@@ -119,7 +119,7 @@ const FG = {
 export function drawCharacter(ctx, cfg, anim){
   const W=640,H=1024;
   ctx.clearRect(0,0,W,H);
-  const female = cfg.gender!=='male';
+  const female = true;
   const a = Object.assign({blink:0,breath:0,sway:0,mouth:0,react:null}, anim||{});
 
   ctx.save();

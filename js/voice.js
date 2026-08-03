@@ -19,34 +19,29 @@ export class Voice{
   _loadVoices(){ this.voices=this.synth.getVoices()||[]; }
 
   /* ---------- 语音输出 ---------- */
-  _pickVoice(gender){
+  _pickVoice(){
     const zh=this.voices.filter(v=>/zh|cmn|chinese/i.test(v.lang+v.name));
     const pool = zh.length?zh:this.voices;
     if(!pool.length) return null;
     const femKey=/female|women|woman|婷|美|Mei|Ting|Xiaoxiao|Yaoyao|Huihui|Google 普通话/i;
-    const maleKey=/male|man|云|Kangkang|Yunyang|Yunxi|Yunjian/i;
-    let cand;
-    if(gender==='female') cand=pool.find(v=>femKey.test(v.name));
-    else cand=pool.find(v=>maleKey.test(v.name));
-    return cand || pool[0];
+    return pool.find(v=>femKey.test(v.name)) || pool[0];
   }
   speak(text){
     if(!this.ttsSupported || !this.app.cfg.voiceOutput || !text) return;
     try{
       this.synth.cancel();
       const u=new SpeechSynthesisUtterance(text.replace(/[✨🎵🎭💗🔒👗🌸☕🛏️🪴]/g,''));
-      const g=this.app.cfg.voiceGender||'female';
-      const v=this._pickVoice(g); if(v){ u.voice=v; u.lang=v.lang; } else u.lang='zh-CN';
+      const v=this._pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang='zh-CN';
       u.rate=this.app.cfg.speechRate||1.0;
-      u.pitch = g==='female' ? 1.2 : 0.7;   // 无独立男/女声时以音高区分
+      u.pitch = 1.2;
       // 朗读期间暂停识别，避免自我回声
       const wasWake=this.mode==='wake';
       this._stop();
       u.onend=()=>{ if(wasWake && this.app.cfg.wakeEnabled) this.startWake(); };
       this.synth.speak(u);
-    }catch(e){}
+    }catch{}
   }
-  stopSpeak(){ try{ this.synth&&this.synth.cancel(); }catch(e){} }
+  stopSpeak(){ try{ this.synth&&this.synth.cancel(); }catch{} }
 
   /* ---------- 语音识别 ---------- */
   _initRec(){
@@ -70,9 +65,9 @@ export class Voice{
   }
   _safeStart(){
     if(this.running || !this.rec) return;
-    try{ this.rec.start(); this.running=true; }catch(e){ /* already started */ }
+    try{ this.rec.start(); this.running=true; }catch{ /* already started */ }
   }
-  _stop(){ if(this.rec && this.running){ try{ this.rec.stop(); }catch(e){} } this.running=false; }
+  _stop(){ if(this.rec && this.running){ try{ this.rec.stop(); }catch{} } this.running=false; }
 
   _onFinal(text){
     const wake=(this.app.cfg.wakeWord||'').trim().toLowerCase();

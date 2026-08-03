@@ -22,14 +22,6 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
   }
 }
 
-/* ---------- 创建界面预览 ---------- */
-export function drawCreationPreviews(makeDefault){
-  $$('.portrait-preview').forEach(cv=>{
-    const g=cv.dataset.preview;
-    renderCharTo(cv, makeDefault(g), {focusHead:true});
-  });
-}
-
 /* ---------- 构建外观面板 ---------- */
 export function buildAppearancePanel(app){
   const {cfg}=app;
@@ -66,7 +58,7 @@ function refreshOutfitThumbs(app){
   const {cfg}=app; const og=$('#outfit-grid'); og.innerHTML='';
   OUTFITS.forEach(o=>{
     const btn=document.createElement('button'); btn.className='thumb'+(cfg.outfit===o.id?' selected':'');
-    if(cfg.gender!=='male' && o.image){
+    if(o.image){
       const img=document.createElement('img'); img.src=o.image; img.alt=o.name; img.className='thumb-img'; btn.appendChild(img);
     } else {
       const cv=document.createElement('canvas'); cv.width=130; cv.height=150; btn.appendChild(cv);
