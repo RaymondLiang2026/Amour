@@ -1,0 +1,148 @@
+{
+  "version": "2.0",
+  "rig_type": "limited",
+  "confidence": 0.614,
+  "image_size": {
+    "w": 896,
+    "h": 1200
+  },
+  "joint_count": 24,
+  "joints": {
+    "pelvis": {
+      "x": 0.5018,
+      "y": 0.4554,
+      "visibility": 0.996
+    },
+    "spine_lower": {
+      "x": 0.4956,
+      "y": 0.3727,
+      "visibility": 0.996
+    },
+    "spine_upper": {
+      "x": 0.4897,
+      "y": 0.2946,
+      "visibility": 1.0
+    },
+    "neck_base": {
+      "x": 0.4846,
+      "y": 0.2256,
+      "visibility": 1.0
+    },
+    "head_joint": {
+      "x": 0.5236,
+      "y": 0.1904,
+      "visibility": 0.995
+    },
+    "head_top": {
+      "x": 0.6379,
+      "y": 0.0872,
+      "visibility": 0.995
+    },
+    "shoulder_L": {
+      "x": 0.5051,
+      "y": 0.2237,
+      "visibility": 1.0
+    },
+    "elbow_L": {
+      "x": 0.5045,
+      "y": 0.3595,
+      "visibility": 0.085
+    },
+    "wrist_L": {
+      "x": 0.5392,
+      "y": 0.4588,
+      "visibility": 0.04
+    },
+    "hand_tip_L": {
+      "x": 0.5464,
+      "y": 0.4918,
+      "visibility": 0.054
+    },
+    "hip_L": {
+      "x": 0.519,
+      "y": 0.4517,
+      "visibility": 0.996
+    },
+    "knee_L": {
+      "x": 0.5336,
+      "y": 0.609,
+      "visibility": 0.009
+    },
+    "ankle_L": {
+      "x": 0.5003,
+      "y": 0.7392,
+      "visibility": 0.002
+    },
+    "ball_L": {
+      "x": 0.5104,
+      "y": 0.7693,
+      "visibility": 0.009
+    },
+    "toe_L": {
+      "x": 0.5214,
+      "y": 0.7763,
+      "visibility": 0.003
+    },
+    "shoulder_R": {
+      "x": 0.4641,
+      "y": 0.2276,
+      "visibility": 1.0
+    },
+    "elbow_R": {
+      "x": 0.4426,
+      "y": 0.3611,
+      "visibility": 0.997
+    },
+    "wrist_R": {
+      "x": 0.4837,
+      "y": 0.476,
+      "visibility": 0.994
+    },
+    "hand_tip_R": {
+      "x": 0.4981,
+      "y": 0.5276,
+      "visibility": 0.994
+    },
+    "hip_R": {
+      "x": 0.4846,
+      "y": 0.4592,
+      "visibility": 0.999
+    },
+    "knee_R": {
+      "x": 0.4844,
+      "y": 0.6103,
+      "visibility": 0.077
+    },
+    "ankle_R": {
+      "x": 0.4507,
+      "y": 0.7576,
+      "visibility": 0.023
+    },
+    "ball_R": {
+      "x": 0.4819,
+      "y": 0.7833,
+      "visibility": 0.023
+    },
+    "toe_R": {
+      "x": 0.5082,
+      "y": 0.7829,
+      "visibility": 0.009
+    }
+  },
+  "hierarchy": {
+    "head": "torso",
+    "torso": null
+  },
+  "parts": {
+    "head": {
+      "pivot": "neck_base",
+      "parent": "torso",
+      "z_order": 1
+    },
+    "torso": {
+      "pivot": "pelvis",
+      "parent": null,
+      "z_order": 0
+    }
+  }
+}

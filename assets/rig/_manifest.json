@@ -1,0 +1,1104 @@
+{
+  "total": 132,
+  "full": 93,
+  "limited": 39,
+  "failed": 0,
+  "by_view": {
+    "front": {
+      "full": 22,
+      "limited": 0,
+      "failed": 0
+    },
+    "l45": {
+      "full": 20,
+      "limited": 2,
+      "failed": 0
+    },
+    "l90": {
+      "full": 5,
+      "limited": 17,
+      "failed": 0
+    },
+    "r45": {
+      "full": 19,
+      "limited": 3,
+      "failed": 0
+    },
+    "r90": {
+      "full": 5,
+      "limited": 17,
+      "failed": 0
+    },
+    "back": {
+      "full": 22,
+      "limited": 0,
+      "failed": 0
+    }
+  },
+  "pipeline_params": {
+    "dilate_px": 8,
+    "feather_sigma": 4.0,
+    "full_min_key_vis": 0.3,
+    "segmentation": "nearest_bone",
+    "spec": "fine_anatomical_21part"
+  },
+  "items": [
+    {
+      "lookkey": "base",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.94,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "base",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.963,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "base",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.661,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "base",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.889,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "base",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.792,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "base",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.935,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_blonde",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.955,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_blonde",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.954,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_blonde",
+      "view": "l90",
+      "status": "full",
+      "confidence": 0.932,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_blonde",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.918,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_blonde",
+      "view": "r90",
+      "status": "full",
+      "confidence": 0.895,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_blonde",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.919,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_brown",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.945,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_brown",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.974,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_brown",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.716,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "color_brown",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.889,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_brown",
+      "view": "r90",
+      "status": "full",
+      "confidence": 0.946,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_brown",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.912,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_pink",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.948,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_pink",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.963,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_pink",
+      "view": "l90",
+      "status": "full",
+      "confidence": 0.942,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_pink",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.951,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "color_pink",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.819,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "color_pink",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.889,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_longcurly",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.95,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_longcurly",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.971,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_longcurly",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.6,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "hair_longcurly",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.902,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_longcurly",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.803,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "hair_longcurly",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.891,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_ponytail",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.947,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_ponytail",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.962,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_ponytail",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.794,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "hair_ponytail",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.916,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_ponytail",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.794,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "hair_ponytail",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.936,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_short",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.942,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_short",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.976,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_short",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.859,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "hair_short",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.979,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_short",
+      "view": "r90",
+      "status": "full",
+      "confidence": 0.95,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "hair_short",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.928,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_basic",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.975,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_basic",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.972,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_basic",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.809,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_basic",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.96,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_basic",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.799,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_basic",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.968,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_boxing",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.99,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_boxing",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.934,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_boxing",
+      "view": "l90",
+      "status": "full",
+      "confidence": 0.919,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_boxing",
+      "view": "r45",
+      "status": "limited",
+      "confidence": 0.838,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_boxing",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.792,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_boxing",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.971,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_casual",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.985,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_casual",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.959,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_casual",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.799,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_casual",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.881,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_casual",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.708,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_casual",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.922,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_school",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.984,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_school",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.977,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_school",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.786,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_school",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.976,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_school",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.827,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_school",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.936,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street1",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.968,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street1",
+      "view": "l45",
+      "status": "limited",
+      "confidence": 0.843,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street1",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.843,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street1",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.902,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street1",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.794,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street1",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.974,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street10",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.894,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street10",
+      "view": "l45",
+      "status": "limited",
+      "confidence": 0.852,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street10",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.81,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street10",
+      "view": "r45",
+      "status": "limited",
+      "confidence": 0.875,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street10",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.791,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street10",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.897,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street2",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.977,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street2",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.974,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street2",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.711,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street2",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.91,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street2",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.849,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street2",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.988,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street3",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.823,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street3",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.876,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street3",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.816,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street3",
+      "view": "r45",
+      "status": "limited",
+      "confidence": 0.69,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street3",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.614,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street3",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.826,
+      "joint_count": 24,
+      "parts": 20
+    },
+    {
+      "lookkey": "outfit_street4",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.987,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street4",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.974,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street4",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.815,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street4",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.983,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street4",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.856,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street4",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.991,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street5",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.97,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street5",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.919,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street5",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.923,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street5",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.945,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street5",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.831,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street5",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.969,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street6",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.985,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street6",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.976,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street6",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.818,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street6",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.948,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street6",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.817,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street6",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.991,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street7",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.963,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street7",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.978,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street7",
+      "view": "l90",
+      "status": "full",
+      "confidence": 0.94,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street7",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.958,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street7",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.87,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street7",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.919,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street8",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.988,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street8",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.978,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street8",
+      "view": "l90",
+      "status": "full",
+      "confidence": 0.961,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street8",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.971,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street8",
+      "view": "r90",
+      "status": "full",
+      "confidence": 0.899,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street8",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.94,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street9",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.97,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street9",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.967,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street9",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.786,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street9",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.909,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_street9",
+      "view": "r90",
+      "status": "limited",
+      "confidence": 0.685,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_street9",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.84,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_urban",
+      "view": "front",
+      "status": "full",
+      "confidence": 0.974,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_urban",
+      "view": "l45",
+      "status": "full",
+      "confidence": 0.972,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_urban",
+      "view": "l90",
+      "status": "limited",
+      "confidence": 0.85,
+      "joint_count": 24,
+      "parts": 2
+    },
+    {
+      "lookkey": "outfit_urban",
+      "view": "r45",
+      "status": "full",
+      "confidence": 0.972,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_urban",
+      "view": "r90",
+      "status": "full",
+      "confidence": 0.937,
+      "joint_count": 24,
+      "parts": 21
+    },
+    {
+      "lookkey": "outfit_urban",
+      "view": "back",
+      "status": "full",
+      "confidence": 0.907,
+      "joint_count": 24,
+      "parts": 21
+    }
+  ],
+  "processing_time_seconds": 598.0
+}

@@ -1,0 +1,262 @@
+{
+  "version": "2.0",
+  "rig_type": "full",
+  "confidence": 0.891,
+  "image_size": {
+    "w": 896,
+    "h": 1200
+  },
+  "joint_count": 24,
+  "joints": {
+    "pelvis": {
+      "x": 0.4996,
+      "y": 0.5221,
+      "visibility": 1.0
+    },
+    "spine_lower": {
+      "x": 0.502,
+      "y": 0.4284,
+      "visibility": 1.0
+    },
+    "spine_upper": {
+      "x": 0.5043,
+      "y": 0.34,
+      "visibility": 1.0
+    },
+    "neck_base": {
+      "x": 0.5063,
+      "y": 0.262,
+      "visibility": 1.0
+    },
+    "head_joint": {
+      "x": 0.5005,
+      "y": 0.2242,
+      "visibility": 1.0
+    },
+    "head_top": {
+      "x": 0.4832,
+      "y": 0.1134,
+      "visibility": 1.0
+    },
+    "shoulder_L": {
+      "x": 0.5009,
+      "y": 0.2599,
+      "visibility": 1.0
+    },
+    "elbow_L": {
+      "x": 0.4961,
+      "y": 0.4126,
+      "visibility": 0.953
+    },
+    "wrist_L": {
+      "x": 0.3689,
+      "y": 0.5249,
+      "visibility": 0.955
+    },
+    "hand_tip_L": {
+      "x": 0.3683,
+      "y": 0.5729,
+      "visibility": 0.955
+    },
+    "hip_L": {
+      "x": 0.4957,
+      "y": 0.5229,
+      "visibility": 1.0
+    },
+    "knee_L": {
+      "x": 0.4598,
+      "y": 0.7353,
+      "visibility": 0.742
+    },
+    "ankle_L": {
+      "x": 0.4567,
+      "y": 0.9314,
+      "visibility": 0.781
+    },
+    "ball_L": {
+      "x": 0.4535,
+      "y": 0.9462,
+      "visibility": 0.802
+    },
+    "toe_L": {
+      "x": 0.446,
+      "y": 0.9397,
+      "visibility": 0.802
+    },
+    "shoulder_R": {
+      "x": 0.5118,
+      "y": 0.2641,
+      "visibility": 1.0
+    },
+    "elbow_R": {
+      "x": 0.538,
+      "y": 0.4125,
+      "visibility": 0.849
+    },
+    "wrist_R": {
+      "x": 0.6448,
+      "y": 0.5301,
+      "visibility": 0.905
+    },
+    "hand_tip_R": {
+      "x": 0.6399,
+      "y": 0.5774,
+      "visibility": 0.905
+    },
+    "hip_R": {
+      "x": 0.5035,
+      "y": 0.5213,
+      "visibility": 1.0
+    },
+    "knee_R": {
+      "x": 0.5438,
+      "y": 0.7282,
+      "visibility": 0.713
+    },
+    "ankle_R": {
+      "x": 0.541,
+      "y": 0.931,
+      "visibility": 0.752
+    },
+    "ball_R": {
+      "x": 0.5497,
+      "y": 0.9438,
+      "visibility": 0.752
+    },
+    "toe_R": {
+      "x": 0.5541,
+      "y": 0.9333,
+      "visibility": 0.739
+    }
+  },
+  "hierarchy": {
+    "pelvis": null,
+    "abdomen": "pelvis",
+    "chest": "abdomen",
+    "neck": "chest",
+    "head": "neck",
+    "clavicle_L": "chest",
+    "clavicle_R": "chest",
+    "upperArm_L": "clavicle_L",
+    "upperArm_R": "clavicle_R",
+    "forearm_L": "upperArm_L",
+    "forearm_R": "upperArm_R",
+    "hand_L": "forearm_L",
+    "hand_R": "forearm_R",
+    "thigh_L": "pelvis",
+    "thigh_R": "pelvis",
+    "calf_L": "thigh_L",
+    "calf_R": "thigh_R",
+    "foot_L": "calf_L",
+    "foot_R": "calf_R",
+    "toe_L": "foot_L",
+    "toe_R": "foot_R"
+  },
+  "parts": {
+    "pelvis": {
+      "pivot": "pelvis",
+      "parent": null,
+      "z_order": 7
+    },
+    "abdomen": {
+      "pivot": "spine_lower",
+      "parent": "pelvis",
+      "z_order": 8
+    },
+    "chest": {
+      "pivot": "spine_upper",
+      "parent": "abdomen",
+      "z_order": 9
+    },
+    "neck": {
+      "pivot": "neck_base",
+      "parent": "chest",
+      "z_order": 12
+    },
+    "head": {
+      "pivot": "head_joint",
+      "parent": "neck",
+      "z_order": 20
+    },
+    "clavicle_L": {
+      "pivot": "neck_base",
+      "parent": "chest",
+      "z_order": 11
+    },
+    "clavicle_R": {
+      "pivot": "neck_base",
+      "parent": "chest",
+      "z_order": 10
+    },
+    "upperArm_L": {
+      "pivot": "shoulder_L",
+      "parent": "clavicle_L",
+      "z_order": 17
+    },
+    "upperArm_R": {
+      "pivot": "shoulder_R",
+      "parent": "clavicle_R",
+      "z_order": 4
+    },
+    "forearm_L": {
+      "pivot": "elbow_L",
+      "parent": "upperArm_L",
+      "z_order": 18
+    },
+    "forearm_R": {
+      "pivot": "elbow_R",
+      "parent": "upperArm_R",
+      "z_order": 5
+    },
+    "hand_L": {
+      "pivot": "wrist_L",
+      "parent": "forearm_L",
+      "z_order": 19
+    },
+    "hand_R": {
+      "pivot": "wrist_R",
+      "parent": "forearm_R",
+      "z_order": 6
+    },
+    "thigh_L": {
+      "pivot": "hip_L",
+      "parent": "pelvis",
+      "z_order": 13
+    },
+    "thigh_R": {
+      "pivot": "hip_R",
+      "parent": "pelvis",
+      "z_order": 0
+    },
+    "calf_L": {
+      "pivot": "knee_L",
+      "parent": "thigh_L",
+      "z_order": 14
+    },
+    "calf_R": {
+      "pivot": "knee_R",
+      "parent": "thigh_R",
+      "z_order": 1
+    },
+    "foot_L": {
+      "pivot": "ankle_L",
+      "parent": "calf_L",
+      "z_order": 15
+    },
+    "foot_R": {
+      "pivot": "ankle_R",
+      "parent": "calf_R",
+      "z_order": 2
+    },
+    "toe_L": {
+      "pivot": "toe_L",
+      "parent": "foot_L",
+      "z_order": 16
+    },
+    "toe_R": {
+      "pivot": "toe_R",
+      "parent": "foot_R",
+      "z_order": 3
+    }
+  }
+}
