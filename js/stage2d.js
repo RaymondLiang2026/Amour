@@ -2,9 +2,10 @@
 // 单一渲染出口：写实场景背景 + 写实人物六视角 180° 旋转 + 缩放 + 景深视差。
 // 纯 DOM/CSS，无 Three.js、无 shader 抠图、无低模道具，彻底避免多来源渲染打架。
 
-const V = 'r2d5-20260803f';
+const V = 'r2d5-20260803g';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const SCENES = {
   stage: `assets/realistic/scene/stage.png?v=${V}`,
@@ -28,6 +29,96 @@ const STOPS = [
   { a: 180, v: 'back' },
 ];
 
+// 动作系统：≥20 个动作名
+const ACTIONS = [
+  'bounce',
+  'jump',
+  'nod',
+  'shake',
+  'wobble',
+  'sway',
+  'tilt',
+  'spin',
+  'flip',
+  'pulse',
+  'heartbeat',
+  'shiver',
+  'jitter',
+  'float',
+  'squash',
+  'leanin',
+  'zoompunch',
+  'swing',
+  'wave',
+  'celebrate',
+];
+
+// 10 种表情情绪（贴纸 + 动作 + 粒子 + 台词），用于「表情快捷条」与「点击随机」
+const EMOTIONS = {
+  cry: {
+    sticker: '😭',
+    actions: ['shiver', 'sway'],
+    effect: { emoji: '💧', count: 9 },
+    lines: ['呜…有点想哭。', '别丢下我嘛…', '我没事…就是有点委屈。'],
+  },
+  silly: {
+    sticker: '😝',
+    actions: ['wobble', 'jitter'],
+    effect: { emoji: '💫', count: 6 },
+    lines: ['略略略~', '看我搞怪！', '嘿嘿，被我逗到了吗？'],
+  },
+  pout: {
+    sticker: '😗',
+    actions: ['tilt', 'shake'],
+    effect: { emoji: '💭', count: 4 },
+    lines: ['哼…我才没有抱怨。', '你欠我一个解释。', '我不理你三秒！'],
+  },
+  laugh: {
+    sticker: '😄',
+    actions: ['bounce', 'celebrate'],
+    effect: { emoji: '✨', count: 7 },
+    lines: ['哈哈~太好玩了！', '开心！', '你一来我就笑啦~'],
+  },
+  shy: {
+    sticker: '😳',
+    stickerClass: 'blush',
+    actions: ['leanin', 'tilt'],
+    effect: { emoji: '💗', count: 6 },
+    lines: ['别这样看着我啦…', '我会害羞的。', '你靠近一点…也可以。'],
+  },
+  angry: {
+    sticker: '😠',
+    actions: ['shiver', 'jitter'],
+    effect: { emoji: '💢', count: 6 },
+    lines: ['哼！我生气了！', '不许欺负我！', '我才不是小气！'],
+  },
+  jealous: {
+    sticker: '😒',
+    actions: ['shake', 'spin'],
+    effect: { emoji: '🌀', count: 6 },
+    lines: ['哼…你刚刚在看谁？', '我才不会吃醋呢。', '别的都不准看。'],
+  },
+  surprise: {
+    sticker: '😲',
+    actions: ['jump', 'zoompunch'],
+    effect: { emoji: '❗', count: 6 },
+    lines: ['呀！吓到我了！', '诶？！真的假的？', '等下等下——'],
+  },
+  spoiled: {
+    sticker: '🥰',
+    actions: ['heartbeat', 'leanin'],
+    effect: { emoji: '❤️', count: 10 },
+    lines: ['你再哄哄我嘛~', '今天想被你宠一下。', '抱抱~就一下。'],
+  },
+  grievance: {
+    sticker: '🥺',
+    actions: ['sway', 'nod'],
+    effect: { emoji: '🥺', count: 4 },
+    lines: ['我有点委屈…', '你别凶我嘛。', '我只是想你多陪我一会儿。'],
+  },
+};
+const EMOTION_KEYS = Object.keys(EMOTIONS);
+
 export class Scene3D {
   constructor(root, cfg, cbs = {}) {
     this.root = root;
@@ -36,16 +127,20 @@ export class Scene3D {
 
     // 状态：单一真相源
     this.theme = this.cfg.theme || 'stage';
-    this.look = this.cfg.look || 'base';    // 当前造型（发型/发色/服装整套六视角）
-    this.yaw = 0; this.yawDisp = 0;         // 目标/显示旋转角
-    this.zoom = 1; this.zoomTarget = 1;     // 缩放
-    this.parX = 0; this.parY = 0;           // 视差目标
-    this.parXd = 0; this.parYd = 0;         // 视差显示
+    this.look = this.cfg.look || 'base'; // 当前造型（发型/发色/服装整套六视角）
+    this.yaw = 0; this.yawDisp = 0;      // 目标/显示旋转角
+    this.zoom = 1; this.zoomTarget = 1;  // 缩放
+    this.parX = 0; this.parY = 0;        // 视差目标
+    this.parXd = 0; this.parYd = 0;      // 视差显示
     this.light = this.cfg.light || 'warm';
     this.daynight = typeof this.cfg.daynight === 'number' ? this.cfg.daynight : 62;
     this.walkEnabled = this.cfg.walkEnabled !== false;
-    this.bounce = 0;                        // 交互反馈弹跳
     this.t0 = performance.now();
+
+    // 动作控制（防重入 / 打断上一个）
+    this._actClass = null;
+    this._actTimer = 0;
+    this._actEnd = null;
 
     this._hideLegacyLayers();
     this._buildDom();
@@ -69,63 +164,138 @@ export class Scene3D {
     const r = this.root;
     r.innerHTML = '';
     r.classList.add('s2-root');
-    this.bg = document.createElement('div'); this.bg.className = 's2-bg';
-    this.charWrap = document.createElement('div'); this.charWrap.className = 's2-char';
+
+    this.bg = document.createElement('div');
+    this.bg.className = 's2-bg';
+
+    // 关键：避免 transform 冲突
+    // - JS 在 RAF 里持续写 .s2-char 的 transform（缩放/视差/位移）
+    // - 动作/idle 只作用在内层 .s2-actor 上（嵌套 transform 自然叠乘，不打架）
+    this.charWrap = document.createElement('div');
+    this.charWrap.className = 's2-char';
+
+    this.actor = document.createElement('div');
+    this.actor.className = 's2-actor';
+
+    this.fxLayer = document.createElement('div');
+    this.fxLayer.className = 's2-fx';
+
     this.imgs = {};
     VIEW_NAMES.forEach((name, i) => {
       const im = document.createElement('img');
-      im.className = 's2-view'; im.src = CHAR(name, this.look); im.alt = 'Yui';
-      im.draggable = false; im.style.opacity = name === 'front' ? '1' : '0';
+      im.className = 's2-view';
+      im.src = CHAR(name, this.look);
+      im.alt = 'Yui';
+      im.draggable = false;
+      im.style.opacity = name === 'front' ? '1' : '0';
       im.style.zIndex = String(i);
-      this.imgs[name] = im; this.charWrap.appendChild(im);
+      this.imgs[name] = im;
+      this.actor.appendChild(im);
     });
-    this.vig = document.createElement('div'); this.vig.className = 's2-vignette';
-    r.appendChild(this.bg); r.appendChild(this.charWrap); r.appendChild(this.vig);
+
+    this.actor.appendChild(this.fxLayer);
+    this.charWrap.appendChild(this.actor);
+
+    this.vig = document.createElement('div');
+    this.vig.className = 's2-vignette';
+
+    r.appendChild(this.bg);
+    r.appendChild(this.charWrap);
+    r.appendChild(this.vig);
   }
 
   _bindEvents() {
     const el = this.root;
     el.style.touchAction = 'none';
-    this.drag = null; this.pointers = new Map(); this.pinchDist = 0;
+    this.drag = null;
+    this.pointers = new Map();
+    this.pinchDist = 0;
+    this._gestureHadPinch = false;
 
     el.addEventListener('pointerdown', e => {
       el.setPointerCapture?.(e.pointerId);
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
       if (this.pointers.size === 1) {
-        this.drag = { x: e.clientX, yaw: this.yaw, moved: 0 };
+        this._gestureHadPinch = false;
+        this.drag = {
+          x: e.clientX,
+          yaw: this.yaw,
+          startX: e.clientX,
+          startY: e.clientY,
+          t0: performance.now(),
+          moved: 0,
+        };
         el.classList.add('grabbing');
-      } else if (this.pointers.size === 2) {
+        return;
+      }
+
+      if (this.pointers.size === 2) {
+        this._gestureHadPinch = true;
         this.pinchDist = this._pinch();
       }
     });
+
     el.addEventListener('pointermove', e => {
       // 视差：指针位置驱动前后景位移差 → 3D 纵深
-      const nx = (e.clientX / innerWidth - 0.5) * 2, ny = (e.clientY / innerHeight - 0.5) * 2;
-      this.parX = nx; this.parY = ny;
-      if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const nx = (e.clientX / innerWidth - 0.5) * 2;
+      const ny = (e.clientY / innerHeight - 0.5) * 2;
+      this.parX = nx;
+      this.parY = ny;
+
+      if (this.pointers.has(e.pointerId)) {
+        this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+
+      // 双指：捏合缩放（保持原逻辑）
       if (this.pointers.size === 2) {
         const d = this._pinch();
         if (this.pinchDist) this.zoomBy((this.pinchDist - d) * 0.02);
-        this.pinchDist = d; return;
+        this.pinchDist = d;
+        return;
       }
+
+      // 单指：拖拽旋转
       if (this.drag) {
         const dx = e.clientX - this.drag.x;
-        this.drag.moved += Math.abs(dx);
         this.yaw = clamp(this.drag.yaw + dx * 0.55, -180, 180);
-        this.drag.x = e.clientX; this.drag.yaw = this.yaw;
+        this.drag.x = e.clientX;
+        this.drag.yaw = this.yaw;
+        this.drag.moved = Math.max(this.drag.moved, Math.hypot(e.clientX - this.drag.startX, e.clientY - this.drag.startY));
       }
     });
+
     const up = e => {
       const wasDrag = this.drag;
+      const now = performance.now();
+
       this.pointers.delete(e.pointerId);
       if (this.pointers.size < 2) this.pinchDist = 0;
-      if (this.pointers.size === 0) { el.classList.remove('grabbing'); this.drag = null; }
-      // 轻点（几乎没拖动）视为点击角色
-      if (wasDrag && wasDrag.moved < 6) { this.playReaction('happy'); this.cbs.onCharacterClick?.('body'); }
+
+      const isLastPointer = this.pointers.size === 0;
+      if (isLastPointer) {
+        el.classList.remove('grabbing');
+        this.drag = null;
+      }
+
+      // 点击判定（不破坏拖拽旋转）：位移 < 8px 且时长 < 300ms，且未发生双指
+      if (isLastPointer && wasDrag && !this._gestureHadPinch) {
+        const dt = now - wasDrag.t0;
+        const dist = wasDrag.moved;
+        if (dist < 8 && dt < 300) {
+          const emotion = pick(EMOTION_KEYS) || 'laugh';
+          this.playEmotion(emotion, { emitLine: true, source: 'click' });
+          this.cbs.onCharacterClick?.('body', { silentBubble: true, emotion, source: 'click' });
+        }
+      }
     };
+
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
-    el.addEventListener('wheel', e => { e.preventDefault(); this.zoomBy(Math.sign(e.deltaY) * 0.6); }, { passive: false });
+    el.addEventListener('wheel', e => {
+      e.preventDefault();
+      this.zoomBy(Math.sign(e.deltaY) * 0.6);
+    }, { passive: false });
   }
 
   _pinch() {
@@ -134,42 +304,229 @@ export class Scene3D {
     return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
   }
 
+  /* ---------- 动作系统 ---------- */
+  playAction(name) {
+    if (!this.actor) return;
+
+    const n = (name || '').toLowerCase();
+    const act = ACTIONS.includes(n) ? n : pick(ACTIONS);
+    const cls = `act-${act}`;
+
+    // 打断上一个动作
+    if (this._actClass) this.actor.classList.remove(this._actClass);
+    if (this._actEnd) this.actor.removeEventListener('animationend', this._actEnd);
+    if (this._actTimer) clearTimeout(this._actTimer);
+
+    // 触发重播（同名动作也能重新播放）
+    // eslint-disable-next-line no-unused-expressions
+    this.actor.offsetWidth;
+
+    this._actClass = cls;
+    this.actor.classList.add(cls);
+
+    const done = () => {
+      if (!this.actor) return;
+      if (this._actClass) this.actor.classList.remove(this._actClass);
+      this._actClass = null;
+      if (this._actEnd) this.actor.removeEventListener('animationend', this._actEnd);
+      this._actEnd = null;
+      if (this._actTimer) clearTimeout(this._actTimer);
+      this._actTimer = 0;
+    };
+
+    this._actEnd = (ev) => {
+      if (ev && ev.target !== this.actor) return;
+      done();
+    };
+    this.actor.addEventListener('animationend', this._actEnd);
+
+    // 兜底：部分浏览器/组合动画可能不触发 animationend
+    this._actTimer = setTimeout(done, 1700);
+  }
+
+  spawnEffect(emoji, count = 6) {
+    if (!this.fxLayer) return;
+    const em = emoji || '✨';
+    const n = clamp(+count || 0, 1, 18);
+
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('span');
+      el.className = 's2-emoji';
+      el.textContent = em;
+
+      const dx = (Math.random() * 140 - 70).toFixed(1) + 'px';
+      const dy = (-(90 + Math.random() * 90)).toFixed(1) + 'px';
+      const rot = (Math.random() * 80 - 40).toFixed(1) + 'deg';
+      const sc = (0.92 + Math.random() * 0.42).toFixed(3);
+      const dur = (0.92 + Math.random() * 0.30).toFixed(3) + 's';
+      const delay = (Math.random() * 0.12).toFixed(3) + 's';
+
+      el.style.setProperty('--dx', dx);
+      el.style.setProperty('--dy', dy);
+      el.style.setProperty('--rot', rot);
+      el.style.setProperty('--scale', sc);
+      el.style.animationDuration = dur;
+      el.style.animationDelay = delay;
+
+      this.fxLayer.appendChild(el);
+      setTimeout(() => el.remove(), 1400);
+    }
+  }
+
+  _showSticker(sticker, cls) {
+    if (!this.actor || !sticker) return;
+    const el = document.createElement('div');
+    el.className = `s2-sticker${cls ? ` ${cls}` : ''}`;
+    el.textContent = sticker;
+    this.actor.appendChild(el);
+    setTimeout(() => el.remove(), 1400);
+  }
+
+  // 表情反馈：贴纸 + 动作 + 粒子 + （可选）一句台词 → 外部气泡/语音
+  playEmotion(name, opts = {}) {
+    const key = (name || '').toLowerCase();
+    const entry = EMOTIONS[key] || EMOTIONS[pick(EMOTION_KEYS)];
+    if (!entry) return;
+
+    this._showSticker(entry.sticker, entry.stickerClass);
+
+    const action = pick(entry.actions || ACTIONS);
+    this.playAction(action);
+
+    if (entry.effect && entry.effect.emoji) {
+      this.spawnEffect(entry.effect.emoji, entry.effect.count || 6);
+    }
+
+    const emitLine = opts.emitLine !== false;
+    if (emitLine) {
+      const line = pick(entry.lines || []);
+      if (line) this.cbs.onAutoTalk?.(line, key || action);
+    }
+  }
+
+  playReaction(mood, opts = {}) {
+    const key = (mood || '').toLowerCase();
+    const withLine = !!opts.withLine;
+
+    // mood → 动作 + emoji + 一句短台词（用于点击反馈）
+    const map = {
+      happy: {
+        actions: ['bounce', 'celebrate'],
+        emoji: '❤️', count: 6,
+        lines: ['被你点到啦！', '好耶！再来一次~', '今天心情超好！'],
+      },
+      shy: {
+        actions: ['tilt', 'squash'],
+        emoji: '😳', count: 5,
+        lines: ['别、别一直点我啦…', '有点害羞。', '你离我太近啦~'],
+      },
+      surprise: {
+        actions: ['jump', 'zoompunch'],
+        emoji: '❗', count: 6,
+        lines: ['呀！吓我一跳！', '诶？怎么啦？', '发生什么事了？'],
+      },
+      love: {
+        actions: ['heartbeat', 'pulse'],
+        emoji: '❤️', count: 9,
+        lines: ['心跳有点快…', '你也在想我吗？', '嗯…好喜欢这种感觉。'],
+      },
+      dance: {
+        actions: ['sway', 'swing', 'wave'],
+        emoji: '🎵', count: 7,
+        lines: ['来点节奏~', '一起摇摆！', '跟上我的拍子~'],
+      },
+      angry: {
+        actions: ['shiver', 'jitter', 'shake'],
+        emoji: '💢', count: 5,
+        lines: ['哼…我可生气了！', '不许欺负我。', '我、我才没有在生气！'],
+      },
+
+      // 兼容 dialogue.js 里的 react 名
+      smile: { actions: ['pulse', 'nod'], emoji: '🙂', count: 4, lines: ['嗯嗯~', '我在呢。', '看着你就很开心。'] },
+      gentle: { actions: ['float', 'tilt'], emoji: '🌸', count: 5, lines: ['慢慢来，我陪着你。', '别急，呼吸一下。', '我在你身边。'] },
+      wave: { actions: ['wave', 'bounce'], emoji: '👋', count: 5, lines: ['嗨！', '我来啦~', '在这在这！'] },
+      blinkx: { actions: ['nod', 'pulse'], emoji: '😉', count: 4, lines: ['眨眨眼~', '嘘——', '悄悄告诉你哦。'] },
+    };
+
+    const entry = map[key] || {
+      actions: ACTIONS,
+      emoji: '✨',
+      count: 5,
+      lines: ['嗯？', '我在~', '再点一下试试？'],
+    };
+
+    const action = pick(entry.actions);
+    this.playAction(action);
+    if (entry.emoji) this.spawnEffect(entry.emoji, entry.count);
+
+    if (withLine) {
+      const line = pick(entry.lines);
+      this.cbs.onAutoTalk?.(line, key || action);
+    }
+  }
+
+  playTalk() {
+    // 气泡出现时的轻微点头（如果正在播动作，就不打断）
+    if (this._actClass) return;
+    this.playAction('nod');
+  }
+
   /* ---------- 外部接口（与旧 Scene3D 兼容） ---------- */
   applyTheme(theme) {
-    this.theme = theme; this.cfg.theme = theme;
+    this.theme = theme;
+    this.cfg.theme = theme;
     document.body.dataset.sceneTheme = theme;
     const url = SCENES[theme] || SCENES.stage;
     if (this.bg) this.bg.style.backgroundImage = `url("${url}")`;
     this.cbs.onChange?.();
   }
+
   // 切换造型：整套六视角素材热替换，保持当前旋转角/缩放/视差状态不变
   applyLook(look) {
-    this.look = look || 'base'; this.cfg.look = this.look;
+    this.look = look || 'base';
+    this.cfg.look = this.look;
     VIEW_NAMES.forEach(n => { if (this.imgs[n]) this.imgs[n].src = CHAR(n, this.look); });
-    this.bounce = 1;
+    this.playAction('bounce');
+    this.spawnEffect('✨', 5);
     this.cbs.onChange?.();
   }
+
   applyLight(mode) {
-    this.light = mode; this.cfg.light = mode;
+    this.light = mode;
+    this.cfg.light = mode;
     this._applyGrade();
   }
+
   setDayNight(v) {
-    this.daynight = v; this.cfg.daynight = v;
+    this.daynight = v;
+    this.cfg.daynight = v;
     this._applyGrade();
   }
+
   _applyGrade() {
     // 昼夜 + 冷暖统一作用于背景与人物，保持写实调性
-    const t = clamp(this.daynight, 0, 100) / 100;         // 0 夜 → 1 昼
+    const t = clamp(this.daynight, 0, 100) / 100; // 0 夜 → 1 昼
     const bright = lerp(0.72, 1.06, t);
-    const warm = this.light === 'cool' ? 'saturate(1.05) hue-rotate(-6deg)' : 'saturate(1.08) sepia(0.06)';
+    const warm = this.light === 'cool'
+      ? 'saturate(1.05) hue-rotate(-6deg)'
+      : 'saturate(1.08) sepia(0.06)';
+
     if (this.bg) this.bg.style.filter = `brightness(${bright.toFixed(3)}) ${warm}`;
-    if (this.charWrap) this.charWrap.style.filter = `brightness(${lerp(0.82, 1.04, t).toFixed(3)}) ${this.light === 'cool' ? 'saturate(1.02)' : 'saturate(1.04)'}`;
+    if (this.charWrap) {
+      this.charWrap.style.filter = `brightness(${lerp(0.82, 1.04, t).toFixed(3)}) ${this.light === 'cool' ? 'saturate(1.02)' : 'saturate(1.04)'}`;
+    }
     if (this.vig) this.vig.style.opacity = String(lerp(0.55, 0.22, t));
   }
-  setWalkEnabled(on) { this.walkEnabled = !!on; this.cfg.walkEnabled = this.walkEnabled; }
-  zoomBy(dz) { this.zoomTarget = clamp(this.zoomTarget - dz * 0.12, 0.72, 1.95); }
-  playReaction() { this.bounce = 1; }
-  playTalk() { this.bounce = 0.7; }
+
+  setWalkEnabled(on) {
+    this.walkEnabled = !!on;
+    this.cfg.walkEnabled = this.walkEnabled;
+  }
+
+  zoomBy(dz) {
+    this.zoomTarget = clamp(this.zoomTarget - dz * 0.12, 0.72, 1.95);
+  }
+
   redrawCharacter() {
     this.applyTheme(this.cfg.theme || this.theme);
     this.applyLight(this.cfg.light || this.light);
@@ -178,6 +535,7 @@ export class Scene3D {
     const look = this.cfg.look || 'base';
     if (look !== this.look) this.applyLook(look);
   }
+
   // 低模道具体系已下线：保留空实现，兼容旧调用
   addProp() {}
   clearProps() {}
@@ -192,9 +550,13 @@ export class Scene3D {
   _crossfade() {
     const y = this.yawDisp;
     let i = 0;
-    for (let k = 0; k < STOPS.length - 1; k++) { if (y >= STOPS[k].a && y <= STOPS[k + 1].a) { i = k; break; } }
-    const a0 = STOPS[i], a1 = STOPS[i + 1];
+    for (let k = 0; k < STOPS.length - 1; k++) {
+      if (y >= STOPS[k].a && y <= STOPS[k + 1].a) { i = k; break; }
+    }
+    const a0 = STOPS[i];
+    const a1 = STOPS[i + 1];
     const t = (y - a0.a) / (a1.a - a0.a || 1);
+
     VIEW_NAMES.forEach(n => { this.imgs[n].style.opacity = '0'; });
     // 相邻两视角叠加；两端都是 back 时自动叠满
     this.imgs[a0.v].style.opacity = String(clamp(1 - t, 0, 1) + (a0.v === a1.v ? clamp(t, 0, 1) : 0));
@@ -203,26 +565,28 @@ export class Scene3D {
 
   _loop() {
     requestAnimationFrame(() => this._loop());
-    const now = performance.now(), tt = (now - this.t0) / 1000;
+    const now = performance.now();
+    const tt = (now - this.t0) / 1000;
+
     // 平滑逼近
     this.yawDisp = lerp(this.yawDisp, this.yaw, 0.18);
     this.zoom = lerp(this.zoom, this.zoomTarget, 0.12);
     this.parXd = lerp(this.parXd, this.parX, 0.06);
     this.parYd = lerp(this.parYd, this.parY, 0.06);
-    this.bounce = lerp(this.bounce, 0, 0.06);
 
-    // 呼吸 + 可选轻微游走
-    const breath = Math.sin(tt * 1.6) * 0.006;
+    // 可选轻微游走（只影响 .s2-char，idle/动作交给 .s2-actor）
     const walk = this.walkEnabled ? Math.sin(tt * 0.5) * 10 : 0;
-    const bounceS = 1 + this.bounce * 0.03;
 
     // 背景视差（幅度大）与人物视差（幅度小）→ 纵深
-    if (this.bg) this.bg.style.transform = `scale(1.08) translate(${(-this.parXd * 1.6).toFixed(2)}%, ${(-this.parYd * 1.0).toFixed(2)}%)`;
+    if (this.bg) {
+      this.bg.style.transform = `scale(1.08) translate(${(-this.parXd * 1.6).toFixed(2)}%, ${(-this.parYd * 1.0).toFixed(2)}%)`;
+    }
     if (this.charWrap) {
-      const s = (this.zoom * (1 + breath) * bounceS).toFixed(4);
+      const s = this.zoom.toFixed(4);
       const tx = (this.parXd * 0.8 + walk / innerWidth * 100).toFixed(2);
       this.charWrap.style.transform = `translateX(-50%) translate(${tx}%, ${(this.parYd * 0.4).toFixed(2)}%) scale(${s})`;
     }
+
     this._crossfade();
     this.cbs.onFrame?.();
   }

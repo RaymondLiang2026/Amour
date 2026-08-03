@@ -34,31 +34,58 @@ export class Voice{
   }
 
   /* ---------- 语音输出 ---------- */
-  // 优选真人感活泼少女中文女声
+  // 优选中文女声（lang 以 zh 开头优先；其次名称含 female/女/Xiaoxiao/Yun 等）
   _pickVoice(){
     const list=this.voices;
     if(!list.length) return null;
-    // 1) 名称优先级（活泼真人女声）
-    const preferred=[/xiaoxiao/i,/xiaoyi/i,/yaoyao/i,/云希/,/晓晓/,/google\s*普通话/i,/chinese\s*female/i];
+
+    const zh=list.filter(v=>/^zh/i.test(v.lang) || /\b(zh|cmn|chinese)\b/i.test(v.lang+''));
+    const pool=zh.length?zh:list;
+
+    const preferred=[
+      /xiaoxiao/i,
+      /xiaoyi/i,
+      /yaoyao/i,
+      /yunxi/i,
+      /yun/i,
+      /云希/,
+      /晓晓/,
+      /小晓/,
+      /female|女/i,
+      /google\s*普通话/i,
+      /chinese\s*female/i,
+    ];
     for(const re of preferred){
-      const hit=list.find(v=>re.test(v.name));
+      const hit=pool.find(v=>re.test(v.name));
       if(hit) return hit;
     }
-    // 2) 中文女声兜底
-    const zh=list.filter(v=>/zh|cmn|chinese/i.test(v.lang+' '+v.name));
-    const pool=zh.length?zh:list;
-    const femKey=/female|women|woman|婷|美|Mei|Ting|Xiao|Yao|Hui|Google 普通话/i;
+
+    const femKey=/female|women|woman|女|婷|美|Mei|Ting|Xiao|Yao|Hui|Xiaoxiao|Yun/i;
     return pool.find(v=>femKey.test(v.name)) || pool[0];
   }
 
-  // 语气处理：句末无标点补"～"上扬；含"！"轻微提升 pitch
+  // 语气处理：随机前置俏皮语气词 + 每句 pitch/rate 轻微随机，让声音更活泼
   _prosody(text){
-    let t=(text||'').replace(/[✨🎵🎭💗🔒👗🌸☕🛏️🪴]/g,'').trim();
-    let pitch=1.10;
-    if(/！|!/.test(t)) pitch+=0.05;
+    let t=(text||'').replace(/[✨🎵🎭💗🔒👗🌸☕🛏️🪴]/g,'').replace(/\s+/g,' ').trim();
+    if(!t) return {text:'', pitch:1.1, rate:1.05};
+
+    const prefixes=['嗯~','嘿嘿，','呀！','哼哼~','诶？','喂喂，','叮咚~','好耶！'];
+    if(Math.random()<0.42 && !/^(嗯|嘿嘿|呀|哼哼|诶|喂喂|叮咚|好耶)/.test(t)){
+      t=prefixes[Math.floor(Math.random()*prefixes.length)]+t;
+    }
+
     // 句末若无标点，补一个上扬"～"
     if(t && !/[～~。.!！?？,，、;；:：]$/.test(t)) t+='～';
-    return {text:t, pitch};
+
+    const rand=(a,b)=>a+(b-a)*Math.random();
+    let pitch=rand(1.05,1.25);
+    if(/！|!/.test(t)) pitch+=0.04;
+    pitch=Math.max(0.5,Math.min(2,pitch));
+
+    const baseRate=(typeof this.app?.cfg?.speechRate==='number')?this.app.cfg.speechRate:1.08;
+    const rate=Math.max(0.6,Math.min(2, baseRate*rand(1.0,1.15)));
+
+    return {text:t, pitch, rate};
   }
 
   speak(text){
@@ -70,13 +97,13 @@ export class Voice{
     if(!this.ttsSupported || !this.app.cfg.voiceOutput || !text) return;
     try{
       this.synth.cancel();
-      const {text:say, pitch}=this._prosody(text);
+      const {text:say, pitch, rate}=this._prosody(text);
       if(!say) return;
       const u=new SpeechSynthesisUtterance(say);
       const v=this._pickedVoice||this._pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang='zh-CN';
-      // 活泼运动少女音：语速略快、音调上扬、满音量
-      u.rate = (this.app.cfg.speechRate||1.10);
-      u.pitch = pitch;   // 基准 1.10，含"！"时 1.15
+      // 活泼感：每句随机化 pitch/rate（并叠加用户的语速设置）
+      u.rate = rate;
+      u.pitch = pitch;
       u.volume = 1.0;
       // 朗读期间暂停识别，避免自我回声
       const wasWake=this.mode==='wake';

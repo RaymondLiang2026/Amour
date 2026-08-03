@@ -25,7 +25,7 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
 /* ---------- 构建外观面板（写实六视角造型：换发型 / 发色 / 服装） ---------- */
 // 说明：写实预渲染无法做「任意维度自由组合」（组合爆炸），故每个选项 = 一套完整六视角造型，
 // 以其余两项默认值（齐肩·黑·日常）为基线；base 即当前默认套（assets/realistic/character/*）。
-const LOOK_V='r2d5-20260803f';
+const LOOK_V='r2d5-20260803g';
 const CHAR_LOOKS={
   hair:[
     {id:'base',          name:'齐肩', e:'💇‍♀️'},
@@ -87,13 +87,13 @@ export function buildAppearancePanel(app){
 }
 
 function refreshSelected(wrap, active){ $$('.thumb',wrap).forEach(t=>t.classList.remove('selected')); active.classList.add('selected'); }
-function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoji').textContent='✨'; if(app.scene) app.scene.playReaction('happy'); }
+function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoji').textContent='✨'; if(app.scene) app.scene.playReaction('happy', { withLine:false }); }
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
-  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803f'},
-  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803f'},
-  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803f'},
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803g'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803g'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803g'},
 ];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
@@ -119,14 +119,58 @@ export function buildPropsPanel(app){
   app.scene.clearProps();
 }
 
+/* ---------- 表情快捷条（10 种情绪） ---------- */
+const EMOTION_UI=[
+  {key:'cry',       emoji:'😭', title:'哭'},
+  {key:'silly',     emoji:'😝', title:'鬼脸'},
+  {key:'pout',      emoji:'😗', title:'撅嘴'},
+  {key:'laugh',     emoji:'😄', title:'笑'},
+  {key:'shy',       emoji:'😳', title:'害羞'},
+  {key:'angry',     emoji:'😠', title:'生气'},
+  {key:'jealous',   emoji:'😒', title:'吃醋'},
+  {key:'surprise',  emoji:'😲', title:'惊讶'},
+  {key:'spoiled',   emoji:'🥰', title:'撒娇'},
+  {key:'grievance', emoji:'🥺', title:'委屈'},
+];
+
+export function buildEmotionBar(app){
+  const bar=$('#emotion-bar');
+  if(!bar || !app.scene) return;
+  bar.innerHTML='';
+  EMOTION_UI.forEach(it=>{
+    const b=document.createElement('button');
+    b.className='emotion-btn';
+    b.type='button';
+    b.textContent=it.emoji;
+    b.title=it.title;
+    b.onclick=()=>{
+      app.scene.playEmotion(it.key,{emitLine:true,source:'bar'});
+      awardAffinity(app,1);
+      $('#mood-text').textContent='表情：'+it.title;
+      $('#mood-emoji').textContent=it.emoji;
+    };
+    bar.appendChild(b);
+  });
+}
+
+export function emotionMeta(key){
+  return EMOTION_UI.find(x=>x.key===key) || null;
+}
+
 /* ---------- 气泡 & 称呼标签 ---------- */
 let bubbleTimer=null;
-export function showBubble(app, text, react){
+export function showBubble(app, text, react, opts = {}){
   const layer=$('#bubble-layer');
   $$('.bubble',layer).forEach(b=>b.remove());
   const b=document.createElement('div'); b.className='bubble'; b.textContent=text; layer.appendChild(b);
   app._bubbleEl=b;
-  app.scene.playTalk(); if(react) app.scene.playReaction(react);
+
+  const skipSceneReaction = !!opts.skipSceneReaction;
+  if(app.scene){
+    app.scene.playTalk();
+    if(react && !skipSceneReaction) app.scene.playReaction(react, { withLine:false });
+  }
+
   positionBubble(app);
   clearTimeout(bubbleTimer);
   const dur=Math.max(2600, text.length*160);
