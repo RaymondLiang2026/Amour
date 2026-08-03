@@ -1,0 +1,78 @@
+/* 交互热修复：只加强可点击层级与选中反馈，不改变浅色日系未来科技主题 */
+.side-panel,
+.side-panel *,
+.toolbar,
+.toolbar *,
+.dialogue-bar,
+.dialogue-bar *,
+.rhythm-panel,
+.rhythm-panel *{
+  pointer-events:auto;
+}
+.side-panel{
+  z-index:45;
+}
+.toolbar,
+.dialogue-bar{
+  z-index:34;
+}
+.thumb,
+.chip,
+.swatch,
+.light-btn,
+.voice-btn,
+.slider,
+.color-pick,
+.switch,
+.btn-ghost,
+.btn-primary,
+.chat-send,
+.mic-btn,
+.tool-btn{
+  touch-action:manipulation;
+  position:relative;
+}
+.thumb.selected,
+.chip.selected,
+.swatch.selected,
+.light-btn.active,
+.voice-btn.active{
+  outline:2px solid rgba(92,143,184,.55);
+  outline-offset:2px;
+  border-color:rgba(92,143,184,.72) !important;
+  box-shadow:0 0 0 4px rgba(185,223,245,.42),0 12px 28px rgba(103,132,160,.18),0 0 26px rgba(124,181,229,.5) !important;
+  transform:translateY(-2px);
+}
+.swatch{
+  padding:0;
+}
+.swatch::after{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.85);
+  opacity:.8;
+}
+.swatch.selected::before{
+  content:"✓";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#1f303c;
+  font-size:13px;
+  font-weight:500;
+  text-shadow:0 1px 2px rgba(255,255,255,.9);
+  z-index:1;
+}
+body[data-scene-theme="stage"] #bg-stage{
+  background:linear-gradient(145deg,#fbfcff,#eef6fb 52%,#fff7f4);
+}
+body[data-scene-theme="cafe"] #bg-stage{
+  background:linear-gradient(145deg,#fffaf2,#f1f7fb 48%,#f8ece8);
+}
+body[data-scene-theme="bedroom"] #bg-stage{
+  background:linear-gradient(145deg,#f9f7ff,#eef5fb 48%,#fff0f6);
+}

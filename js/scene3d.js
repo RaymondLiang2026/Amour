@@ -5,13 +5,20 @@ import * as THREE from 'three';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
+// 环形角度归一化到 [-180, 180]
+const normAngle = (a) => { a = ((a + 180) % 360 + 360) % 360 - 180; return a; };
 
+// —— 360° 全圆周视角 stops（环形；back 与 back2 复用同一张背面贴图，覆盖 -180/+180 边界）——
 const VIEW_DEFS = [
-  { name: 'l90',   angle: -90, url: 'assets/character/facecut/l90.png' },
-  { name: 'l45',   angle: -45, url: 'assets/character/facecut/l45.png' },
-  { name: 'front', angle:   0, url: 'assets/character/facecut/front.png' },
-  { name: 'r45',   angle: +45, url: 'assets/character/facecut/r45.png' },
-  { name: 'r90',   angle: +90, url: 'assets/character/facecut/r90.png' },
+  { name: 'back',  angle: -180, url: 'assets/character/facecut/back.png' },
+  { name: 'l135',  angle: -135, url: 'assets/character/facecut/l135.png' },
+  { name: 'l90',   angle:  -90, url: 'assets/character/facecut/l90.png' },
+  { name: 'l45',   angle:  -45, url: 'assets/character/facecut/l45.png' },
+  { name: 'front', angle:    0, url: 'assets/character/facecut/front.png' },
+  { name: 'r45',   angle:  +45, url: 'assets/character/facecut/r45.png' },
+  { name: 'r90',   angle:  +90, url: 'assets/character/facecut/r90.png' },
+  { name: 'r135',  angle: +135, url: 'assets/character/facecut/r135.png' },
+  { name: 'back2', angle: +180, url: 'assets/character/facecut/back.png' },  // 复用 back
 ];
 const BLINK_URL = 'assets/character/facecut/blink.png';
 
@@ -46,9 +53,16 @@ export class Scene3D {
     this.aim = { x: 0, y: 0 };
     this.talkT = 0; this.reaction = null; this.reactionT = 0;
     this.modelReady = false;
-    this.currentViewAngle = 0; // 平滑角度
+    this.currentViewAngle = 0; // 平滑角度（环形 [-180,180]）
     this.blinkTimer = 2.6 + Math.random() * 2.4; this.blinkPhase = 0; // s / 0..1
     this.talkPulse = 0;
+    // —— 用户交互角度（拖拽/触控主导视角；hover 仅提供 ±20° 微视差）——
+    this.userYaw = 0;            // 用户拖拽累计偏航角（环形）
+    this.userPitch = 0;          // 用户拖拽俯仰角（clamp ±30）
+    this.dragging = false;       // 是否正在拖拽视角
+    this.dragStart = null;       // { x, y, yaw, pitch }
+    this._pointers = new Map();  // pointerId → {x,y}，用于双指捏合
+    this._pinchStartDist = 0;    // 捏合初始双指距离
     // —— 场景内走动 —— //
     this.walkPhase = Math.random() * Math.PI * 2; // 走动相位
     this.walkT = 0;              // 走动周期计数
@@ -211,8 +225,10 @@ export class Scene3D {
   /* ---------- 外部接口 ---------- */
   applyTheme(theme) {
     this.cfg.theme = theme;
+    document.body.dataset.sceneTheme = theme;
     if (theme === 'bedroom') this.setDayNight(Math.min(this.cfg.daynight, 24));
     else if (theme === 'cafe') this.setDayNight(Math.max(this.cfg.daynight, 60));
+    else this.setDayNight(this.cfg.daynight);
   }
   applyLight(mode) {
     this.cfg.light = mode;
@@ -235,7 +251,17 @@ export class Scene3D {
     if (this.glow) this.glow.material.opacity = 0.4 + (1 - t) * 0.35;
     this.renderer.toneMappingExposure = 0.92 + t * 0.28;
   }
-  redrawCharacter() { this.applyLight(this.cfg.light); }
+  redrawCharacter() {
+    this.applyLight(this.cfg.light);
+    if (this.mainMat?.uniforms) {
+      const outfitBoost = this.cfg.outfit === 'urban' ? 0.1 : this.cfg.outfit === 'academy' ? 0.05 : 0;
+      const accessoryBoost = this.cfg.accessories?.glasses ? 0.03 : 0;
+      this.mainMat.uniforms.uSat.value = 1.08 + outfitBoost;
+      this.mainMat.uniforms.uCon.value = 1.04 + accessoryBoost;
+      this.mainMat.uniforms.uWarm.value = this.cfg.light === 'cool' ? 0.0 : 0.03;
+      this.mainMat.uniforms.uRim.value = 0.35 + (this.cfg.accessories?.hairpin ? 0.08 : 0);
+    }
+  }
   playReaction(type) { this.reaction = type; this.reactionT = 1.2; }
   playTalk() { this.talkT = 1.4; }
   // 镜头缩放：dz<0 拉近、dz>0 拉远；z 限制在 [4.5, 11.5]，_loop 中平滑 lerp
@@ -254,58 +280,113 @@ export class Scene3D {
 
   _bindEvents() {
     const el = this.renderer.domElement;
+    el.style.touchAction = 'none';  // 禁用浏览器默认滚动/缩放手势，交给我们处理
     const norm = e => { const r = el.getBoundingClientRect(); this.mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1; this.mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1; this.pointer.set(this.mouse.x, this.mouse.y); };
-    const onDown = e => {
-      const ce = e.touches ? e.touches[0] : e; norm(ce);
+
+    // —— pointerdown：命中道具→道具拖拽；否则进入视角拖拽（并记录 tap 用于角色点击）——
+    const onDragStart = e => {
+      this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      // 双指：记录初始捏合距离，进入缩放模式（不做单指旋转）
+      if (this._pointers.size === 2) {
+        const p = [...this._pointers.values()];
+        this._pinchStartDist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+        this.dragging = false;
+        return;
+      }
+      norm(e);
       this.raycaster.setFromCamera(this.pointer, this.camera);
+      // 命中道具 → 原道具拖拽逻辑
       const ph = this.raycaster.intersectObjects(this.propsGroup.children, true);
-      if (ph.length) { this.dragProp = ph[0].object.userData.root; return; }
-      // 命中角色 Plane
+      if (ph.length) { this.dragProp = ph[0].object.userData.root; el.setPointerCapture?.(e.pointerId); return; }
+      // 记录角色点击部位（轻点触发 onCharacterClick，拖动则视为转视角）
+      this._downPart = null;
       if (this.planeMain) {
         const ch = this.raycaster.intersectObject(this.planeMain, true);
-        if (ch.length) {
-          const hit = ch[0]; const y = hit.point.y;
-          const part = (y > 1.3) ? 'face' : (y > 0.0 ? 'neck' : 'body');
-          this.cb.onCharacterClick && this.cb.onCharacterClick(part);
-        }
+        if (ch.length) { const y = ch[0].point.y; this._downPart = (y > 1.3) ? 'face' : (y > 0.0 ? 'neck' : 'body'); }
       }
+      // 进入视角拖拽
+      this.dragging = true;
+      this.dragStart = { x: e.clientX, y: e.clientY, yaw: this.userYaw, pitch: this.userPitch };
+      this._downClient = { x: e.clientX, y: e.clientY, moved: 0 };
+      el.setPointerCapture?.(e.pointerId);
     };
-    const onMove = e => {
-      const ce = e.touches ? e.touches[0] : e; norm(ce);
+
+    // —— pointermove：双指捏合 / 道具拖拽 / 视角拖拽 / hover 微视差 ——
+    const onDragMove = e => {
+      if (this._pointers.has(e.pointerId)) this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      // 双指捏合缩放
+      if (this._pointers.size === 2 && this._pinchStartDist > 0) {
+        const p = [...this._pointers.values()];
+        const dist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+        const delta = (dist - this._pinchStartDist) / this._pinchStartDist; // 张开>0 拉近
+        this.zoomBy(-delta * 4);
+        this._pinchStartDist = dist;
+        e.preventDefault && e.preventDefault();
+        return;
+      }
+      // 道具拖拽
       if (this.dragProp) {
+        norm(e);
         this.raycaster.setFromCamera(this.pointer, this.camera);
         const p = new THREE.Vector3(); const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 2.4);
         if (this.raycaster.ray.intersectPlane(plane, p)) { this.dragProp.position.x = clamp(p.x, -3, 3); this.dragProp.position.z = clamp(p.z, -1, 3); }
         e.preventDefault && e.preventDefault();
+        return;
       }
+      // 视角拖拽（userYaw 主导偏航；userPitch 俯仰）
+      if (this.dragging && this.dragStart) {
+        const dx = e.clientX - this.dragStart.x, dy = e.clientY - this.dragStart.y;
+        this.userYaw = normAngle(this.dragStart.yaw + dx * 0.6);        // 每像素 0.6° 灵敏度
+        this.userPitch = clamp(this.dragStart.pitch - dy * 0.35, -30, 30);
+        if (this._downClient) this._downClient.moved = Math.max(this._downClient.moved, Math.hypot(dx, dy));
+        e.preventDefault && e.preventDefault();
+        return;
+      }
+      // hover 微视差（仅在未拖拽时更新 aim）
+      norm(e);
     };
-    const onUp = () => { if (this.dragProp) { this._saveProps(); this.dragProp = null; } };
-    el.addEventListener('mousedown', onDown); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
-    el.addEventListener('touchstart', onDown, { passive: false }); el.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onUp);
+
+    // —— pointerup / pointercancel：结束拖拽；轻点触发角色点击 ——
+    const onDragEnd = e => {
+      this._pointers.delete(e.pointerId);
+      if (this._pointers.size < 2) this._pinchStartDist = 0;
+      if (this.dragProp) { this._saveProps(); this.dragProp = null; }
+      else if (this.dragging && this._downClient && this._downClient.moved < 6 && this._downPart) {
+        this.cb.onCharacterClick && this.cb.onCharacterClick(this._downPart);
+      }
+      this.dragging = false; this._downPart = null; this._downClient = null;
+      el.releasePointerCapture?.(e.pointerId);
+    };
+
+    el.addEventListener('pointerdown', onDragStart);
+    window.addEventListener('pointermove', onDragMove);
+    window.addEventListener('pointerup', onDragEnd);
+    window.addEventListener('pointercancel', onDragEnd);
+    // 滚轮缩放
+    el.addEventListener('wheel', e => { e.preventDefault(); this.zoomBy(Math.sign(e.deltaY) * 0.6); }, { passive: false });
     window.addEventListener('resize', () => this._resize());
   }
   _resize() { this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.renderer.setSize(innerWidth, innerHeight); }
 
   headScreen() {
-    // 头部在 Plane 上部 ~y=2.2 处（planeH=5.4, 全身构图头部靠上）
-    const p = new THREE.Vector3(0, 2.2, 0.01);
+    // 头部在 Plane 上部；直接 project，character.rotation.x（低头/抬头）会自动应用到屏幕坐标
+    const p = new THREE.Vector3(0, 2.5, 0.01);
     const v = p.clone().project(this.camera);
     return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight, visible: v.z < 1 };
   }
 
-  // —— 视角选择：angle ∈ [-90, 90] → 相邻两个 view 的 crossfade —— //
+  // —— 环形视角选择：angle 归一化到 [-180,180] → 相邻两个 view 的 crossfade —— //
   _pickViews(angleDeg) {
     const stops = VIEW_DEFS.map(v => v.angle);
-    // 找到 angleDeg 所在区间
-    let i = 0;
+    const a = normAngle(angleDeg);
     for (let k = 0; k < stops.length - 1; k++) {
-      if (angleDeg >= stops[k] && angleDeg <= stops[k + 1]) { i = k; break; }
-      if (angleDeg < stops[0]) { i = 0; break; }
-      if (angleDeg > stops[stops.length - 1]) { i = stops.length - 2; break; }
+      if (a >= stops[k] && a <= stops[k + 1]) {
+        const A = VIEW_DEFS[k], B = VIEW_DEFS[k + 1];
+        const t = (B.angle === A.angle) ? 0 : (a - A.angle) / (B.angle - A.angle);
+        return { a: A, b: B, t };
+      }
     }
-    const a = VIEW_DEFS[i], b = VIEW_DEFS[i + 1] || VIEW_DEFS[i];
-    const t = (b.angle === a.angle) ? 0 : clamp((angleDeg - a.angle) / (b.angle - a.angle), 0, 1);
-    return { a, b, t };
+    return { a: VIEW_DEFS[0], b: VIEW_DEFS[0], t: 0 };
   }
 
   _loop() {
@@ -338,9 +419,11 @@ export class Scene3D {
         this._stepBob = 0;
       }
 
-      // 目标视角角度: 鼠标最边缘 → 90°(与 stops 端点对齐, 无 mix 残留)；叠加走动看向
-      const targetAngle = clamp(this.aim.x * 90 + (this._walkLook || 0), -90, 90);
-      this.currentViewAngle = lerp(this.currentViewAngle, targetAngle, 0.35);
+      // 目标视角角度: 拖拽 userYaw 主导 + hover 微视差 ±20° + 走动看向（叠加）
+      const targetAngle = this.userYaw + this.aim.x * 20 + (this._walkLook || 0);
+      // 环形 lerp：沿最短路径插值，跨越 ±180 边界不抖动
+      const shortestDelta = normAngle(targetAngle - this.currentViewAngle);
+      this.currentViewAngle = normAngle(this.currentViewAngle + shortestDelta * 0.35);
       const { a, b, t: mix } = this._pickViews(this.currentViewAngle);
 
       // 更新 ShaderMaterial 双纹理与 mix
@@ -357,8 +440,8 @@ export class Scene3D {
       this.character.position.y = -0.02 + breath * 0.018 + (this._stepBob || 0);
       this.character.scale.y = 1 + breath * 0.005;
       this.character.scale.x = 1 - breath * 0.002;
-      // 头部/身体轻旋转 (跟随鼠标 Y)
-      this.character.rotation.x = -this.aim.y * 0.05 + sway * 0.008;
+      // 头部/身体轻旋转：拖拽俯仰 userPitch 主导（低头/抬头）+ 鼠标 Y 微视差
+      this.character.rotation.x = -clamp(this.userPitch, -30, 30) * Math.PI / 180 - this.aim.y * 0.05 + sway * 0.008;
       // 水平位移：鼠标视差 + 场景内走动（叠加，不覆盖）
       this.character.position.x = this.aim.x * 0.05 + (this._walkX || 0);
       // Plane 微倾斜制造立体感 (Y 轴旋转 - 与视角切换协同)

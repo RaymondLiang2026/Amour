@@ -36,24 +36,24 @@ export function buildAppearancePanel(app){
       renderCharTo(cv, {...cfg, hairStyle:h.id}, {focusHead:true});
     }
     const lb=document.createElement('span'); lb.className='thumb-label'; lb.textContent=h.name; btn.appendChild(lb);
-    btn.onclick=()=>{ cfg.hairStyle=h.id; app.updateChar(); refreshSelected(hg,btn); };
+    btn.onclick=()=>{ cfg.hairStyle=h.id; refreshSelected(hg,btn); app.updateChar(); markApplied(app,'发型已更新'); };
     hg.appendChild(btn);
   });
   // 发色
-  buildSwatches($('#hair-swatches'), HAIR_SWATCHES, (c)=>{ cfg.hairColor=c; $('#hair-color').value=c; app.updateChar(); refreshHairThumbs(app); });
+  buildSwatches($('#hair-swatches'), HAIR_SWATCHES, cfg.hairColor, (c)=>{ cfg.hairColor=c; $('#hair-color').value=c; app.updateChar(); refreshHairThumbs(app); markApplied(app,'发色已更新'); });
   $('#hair-color').value=cfg.hairColor; $('#hair-color').oninput=(e)=>{ cfg.hairColor=e.target.value; app.updateChar(); refreshHairThumbs(app); };
   // 服装
   refreshOutfitThumbs(app);
   $('#outfit-color').value=cfg.outfitColor; $('#outfit-color').oninput=(e)=>{ cfg.outfitColor=e.target.value; app.updateChar(); refreshOutfitThumbs(app); };
   // 眼睛
-  buildSwatches($('#eye-swatches'), EYE_SWATCHES, (c)=>{ cfg.eyeColor=c; $('#eye-color').value=c; app.updateChar(); });
+  buildSwatches($('#eye-swatches'), EYE_SWATCHES, cfg.eyeColor, (c)=>{ cfg.eyeColor=c; $('#eye-color').value=c; app.updateChar(); markApplied(app,'眼睛颜色已更新'); });
   $('#eye-color').value=cfg.eyeColor; $('#eye-color').oninput=(e)=>{ cfg.eyeColor=e.target.value; app.updateChar(); };
   // 配饰
   const ag=$('#accessory-grid'); ag.innerHTML='';
   ACCESSORIES.forEach(a=>{
     const chip=document.createElement('button'); chip.className='chip'+(cfg.accessories[a.id]?' selected':'');
     chip.innerHTML=`${a.icon} ${a.name}`;
-    chip.onclick=()=>{ cfg.accessories[a.id]=!cfg.accessories[a.id]; chip.classList.toggle('selected'); app.updateChar(); };
+    chip.onclick=()=>{ cfg.accessories[a.id]=!cfg.accessories[a.id]; chip.classList.toggle('selected'); app.updateChar(); markApplied(app,'配饰已更新'); };
     ag.appendChild(chip);
   });
 }
@@ -69,12 +69,13 @@ function refreshOutfitThumbs(app){
       renderCharTo(cv, {...cfg, outfit:o.id, outfitColor:o.color}, {focusHead:false});
     }
     const lb=document.createElement('span'); lb.className='thumb-label'; lb.textContent=o.name; btn.appendChild(lb);
-    btn.onclick=()=>{ cfg.outfit=o.id; cfg.outfitColor=o.color; $('#outfit-color').value=o.color; app.updateChar(); refreshOutfitThumbs(app); };
+    btn.onclick=()=>{ cfg.outfit=o.id; cfg.outfitColor=o.color; $('#outfit-color').value=o.color; app.updateChar(); refreshOutfitThumbs(app); markApplied(app,'服装已更新'); };
     og.appendChild(btn);
   });
 }
-function buildSwatches(wrap, colors, onPick){ wrap.innerHTML=''; colors.forEach(c=>{ const s=document.createElement('div'); s.className='swatch'; s.style.background=c; s.onclick=()=>onPick(c); wrap.appendChild(s); }); }
+function buildSwatches(wrap, colors, active, onPick){ wrap.innerHTML=''; colors.forEach(c=>{ const s=document.createElement('button'); s.type='button'; s.className='swatch'+(c.toLowerCase()===String(active).toLowerCase()?' selected':''); s.style.background=c; s.onclick=()=>{ $$('.swatch',wrap).forEach(x=>x.classList.remove('selected')); s.classList.add('selected'); onPick(c); }; wrap.appendChild(s); }); }
 function refreshSelected(wrap, active){ $$('.thumb',wrap).forEach(t=>t.classList.remove('selected')); active.classList.add('selected'); }
+function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoji').textContent='✨'; if(app.scene) app.scene.playReaction('happy'); }
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
@@ -87,17 +88,16 @@ export function buildScenePanel(app){
   THEMES.forEach(t=>{
     const btn=document.createElement('button'); btn.className='thumb'+(cfg.theme===t.id?' selected':'');
     btn.innerHTML=`<img src="${t.thumb}" alt="${t.name}" class="thumb-img"><span class="thumb-emoji">${t.e}</span><span class="thumb-label">${t.name}</span>`;
-    btn.onclick=()=>{ cfg.theme=t.id; app.scene.applyTheme(t.id); refreshSelected(tg,btn); app.save(); };
+    btn.onclick=()=>{ cfg.theme=t.id; app.scene.applyTheme(t.id); refreshSelected(tg,btn); setDayLabel(cfg.daynight); markApplied(app,`场景已切换为${t.name}`); app.save(); };
     tg.appendChild(btn);
   });
-  $$('.light-btn').forEach(b=>{ b.classList.toggle('active', b.dataset.light===cfg.light); b.onclick=()=>{ cfg.light=b.dataset.light; app.scene.applyLight(b.dataset.light); $$('.light-btn').forEach(x=>x.classList.toggle('active',x===b)); app.save(); }; });
+  $$('.light-btn').forEach(b=>{ b.classList.toggle('active', b.dataset.light===cfg.light); b.onclick=()=>{ cfg.light=b.dataset.light; app.scene.applyLight(b.dataset.light); $$('.light-btn').forEach(x=>x.classList.toggle('active',x===b)); markApplied(app, b.dataset.light==='cool'?'冷光已开启':'暖光已开启'); app.save(); }; });
   const dn=$('#daynight'); dn.value=cfg.daynight; setDayLabel(cfg.daynight);
-  dn.oninput=(e)=>{ const v=+e.target.value; cfg.daynight=v; app.scene.setDayNight(v); setDayLabel(v); };
+  dn.oninput=(e)=>{ const v=+e.target.value; cfg.daynight=v; app.scene.setDayNight(v); setDayLabel(v); markApplied(app,'昼夜氛围已更新'); };
   dn.onchange=()=>app.save();
   // 走动开关
   const wk=$('#set-walk'); if(wk){ wk.checked=(cfg.walkEnabled!==false); wk.onchange=()=>{ cfg.walkEnabled=wk.checked; app.scene.setWalkEnabled(wk.checked); app.save(); }; }
 }
-function themeBg(id){ return id==='cafe'?'linear-gradient(160deg,#5a3d24,#2e2015)':id==='bedroom'?'linear-gradient(160deg,#5a4a6a,#332a44)':'radial-gradient(circle,#5a3320,#160d08)'; }
 function setDayLabel(v){ $('#daynight-val').textContent = v<25?'夜晚':v<45?'黄昏':v<70?'正午':'白昼'; }
 
 /* ---------- 道具面板 ---------- */
