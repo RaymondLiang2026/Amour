@@ -25,7 +25,7 @@ export function renderCharTo(canvas, cfg, {focusHead=false}={}){
 /* ---------- 构建外观面板（写实六视角造型：换发型 / 发色 / 服装） ---------- */
 // 说明：写实预渲染无法做「任意维度自由组合」（组合爆炸），故每个选项 = 一套完整六视角造型，
 // 以其余两项默认值（齐肩·黑·日常）为基线；base 即当前默认套（assets/realistic/character/*）。
-const LOOK_V='r2d5-20260803d';
+const LOOK_V='r2d5-20260803e';
 const CHAR_LOOKS={
   hair:[
     {id:'base',          name:'齐肩', e:'💇‍♀️'},
@@ -39,17 +39,24 @@ const CHAR_LOOKS={
     {id:'color_blonde', name:'金', sw:'#d9b45b'},
     {id:'color_pink',   name:'粉', sw:'#e08bb0'},
   ],
+  // 服装 = 忠实还原原始 23 素材里的 15 款（assets/generated/outfit_*.png）
   outfit:[
-    {id:'base',          name:'日常', e:'👚'},
-    {id:'outfit_casual', name:'休闲', e:'🧥'},
-    {id:'outfit_school', name:'校园', e:'🎒'},
-    {id:'outfit_street', name:'街头', e:'🛹'},
-    {id:'outfit_street2',name:'潮牌', e:'🕶️'},
-    {id:'outfit_denim',  name:'牛仔', e:'👖'},
-    {id:'outfit_urban',  name:'都市', e:'🏙️'},
-    {id:'outfit_boxing', name:'拳击', e:'🥊'},
-    {id:'outfit_sport',  name:'运动', e:'🏃‍♀️'},
-    {id:'outfit_street3',name:'机能', e:'🧰'},
+    {id:'base',           name:'日常', e:'👚'},
+    {id:'outfit_basic',   name:'背心', e:'🎽'},
+    {id:'outfit_casual',  name:'卫衣', e:'🧥'},
+    {id:'outfit_school',  name:'校园', e:'🎒'},
+    {id:'outfit_urban',   name:'都市', e:'🏙️'},
+    {id:'outfit_boxing',  name:'拳击', e:'🥊'},
+    {id:'outfit_street1', name:'吊带', e:'👚'},
+    {id:'outfit_street2', name:'小黑裙', e:'🖤'},
+    {id:'outfit_street3', name:'阔腿裤', e:'👖'},
+    {id:'outfit_street4', name:'蕾丝', e:'🤍'},
+    {id:'outfit_street5', name:'运动', e:'🏃‍♀️'},
+    {id:'outfit_street6', name:'露肩', e:'💗'},
+    {id:'outfit_street7', name:'碎花', e:'🌸'},
+    {id:'outfit_street8', name:'皮衣', e:'🧥'},
+    {id:'outfit_street9', name:'长裙', e:'✨'},
+    {id:'outfit_street10',name:'旗袍', e:'🏮'},
   ],
 };
 const lookThumb=id=> id==='base'
@@ -84,9 +91,9 @@ function markApplied(app, text){ $('#mood-text').textContent=text; $('#mood-emoj
 
 /* ---------- 场景面板 ---------- */
 const THEMES=[
-  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803d'},
-  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803d'},
-  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803d'},
+  {id:'stage',  name:'舞台',   e:'🎭', thumb:'assets/realistic/scene/preview/stage.jpg?v=r2d5-20260803e'},
+  {id:'cafe',   name:'咖啡馆', e:'☕', thumb:'assets/realistic/scene/preview/cafe.jpg?v=r2d5-20260803e'},
+  {id:'bedroom',name:'卧室',   e:'🛏️', thumb:'assets/realistic/scene/preview/bedroom.jpg?v=r2d5-20260803e'},
 ];
 export function buildScenePanel(app){
   const {cfg}=app; const tg=$('#theme-grid'); tg.innerHTML='';
